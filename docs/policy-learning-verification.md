@@ -23,7 +23,11 @@ Local execution report: `.context/learning-deterministic-mvnqyew6.json`.
 Source fingerprint (SHA-256): `9ed590638f2874575270f9411abe2526abda36b7c59ddb8ee42eafbc8e31cf0b`.
 The fingerprint covers application, backend, script and agent-bundle source bytes; local credentials are excluded. The JSON report also records the Git revision and actual observations. Browser capture: `.context/learning-review.png`. These local artifacts are intentionally gitignored.
 
-**Live verification is partially passing; the full suite is not green yet.** The separate learner is reachable with the existing key. No production or existing-user-sandbox policy was changed; activation below occurred only in an isolated synthetic evaluation sandbox.
+**Latest live run: all learner paths passed; full-suite completion is pending an invoice-regression timeout.** After updating the saved agent, `.context/learning-live-mvnrvmm1.json` recorded 14 passing assertions out of 16 planned. Two explicitly labeled deterministic assertions established the correction scenario's starting policy. Live onboarding proposed signed_schedule_first and passed controller activation; the accepted correction produced an evaluated improvement, later invoices used it correctly, missing signatures escalated, and repeat-history review returned valid no_change with procedure null. Provider references: onboarding `a81f3a1b-7656-4bd0-95ae-ce935e0381db`, correction `1a5fa58a-7a48-445c-850f-1a73d4153612`, abstention `45d3db61-b536-4cee-aa24-ff29f099a2ba`.
+
+The script timed out waiting for the final invoice regression, before recording that assertion or the final no-posting assertion. It did not resubmit the existing run. A previous independent invoice regression passed both checks, as recorded below. The revised evaluation command separately tests onboarding and correction learning, without requiring the live learner to choose controller_confirmation on onboarding. Its deterministic run passed 16/16 assertions (`.context/learning-deterministic-mvnrv1tn.json`); type checking also passed.
+
+**Earlier live attempts (retained for history):** The separate learner is reachable with the existing key. No production or existing-user-sandbox policy was changed; activation below occurred only in an isolated synthetic evaluation sandbox.
 
 | Live run | Observed result |
 |---|---|

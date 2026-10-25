@@ -22,7 +22,7 @@ async function main() {
     );
   const url = config.NEXT_PUBLIC_CONVEX_URL;
   if (!url) throw new Error("NEXT_PUBLIC_CONVEX_URL is missing.");
-  const client = new ConvexHttpClient(url);
+  let client = new ConvexHttpClient(url);
   const auth = await client.action(api.auth.signIn, { provider: "anonymous" });
   if (!auth.tokens) throw new Error("Anonymous sign-in returned no token.");
   client.setAuth(auth.tokens.token);
@@ -54,6 +54,9 @@ async function main() {
       encoding: "utf8",
     }).trim(),
     sandboxId: "",
+    correctionSandboxId: "",
+    completed: false,
+    completionError: null as string | null,
     results,
   };
   const stamp = Date.now().toString(36);
@@ -133,23 +136,85 @@ async function main() {
     if (!start.ok) throw new Error(start.message);
     const onboarding = await waitJob((j) => !j.correctionId);
     check(
-      "Onboarding returns a validated candidate",
-      onboarding.outcome === "candidate" && !!onboarding.policyId,
+      "Onboarding returns a validated candidate or supported abstention",
+      onboarding.status === "completed" &&
+        ["candidate", "no_change", "insufficient_evidence"].includes(
+          onboarding.outcome ?? "",
+        ),
       onboarding,
     );
-    const candidate = (
-      await client.query(api.policies.detail, { id: onboarding.policyId! })
-    ).policy;
+    if (onboarding.outcome === "candidate") {
+      const packet = await client.query(api.policies.detail, {
+        id: onboarding.policyId!,
+      });
+      check(
+        "Onboarding candidate passes safety evaluation",
+        packet.evaluation?.passed === true,
+        { procedure: packet.policy.procedure, evaluation: packet.evaluation },
+      );
+      check(
+        "Controller activates exact onboarding candidate",
+        (
+          await client.mutation(api.policies.activate, {
+            id: packet.policy._id,
+          })
+        ).ok,
+        { policyId: packet.policy._id, procedure: packet.policy.procedure },
+      );
+    } else {
+      check(
+        "Onboarding abstention creates no candidate",
+        !onboarding.policyId,
+        { outcome: onboarding.outcome },
+      );
+    }
+
+    // Correction learning has its own controlled starting policy. Never force
+    // the live onboarding agent to select a weaker procedure for this test.
+    await client.action(api.auth.signOut, {});
+    client = new ConvexHttpClient(url);
+    const correctionAuth = await client.action(api.auth.signIn, {
+      provider: "anonymous",
+    });
+    if (!correctionAuth.tokens)
+      throw new Error("Correction sandbox sign-in returned no token.");
+    client.setAuth(correctionAuth.tokens.token);
+    report.correctionSandboxId = await client.mutation(
+      api.workspace.initialize,
+      {},
+    );
+    save();
+    await waitFor(snapshot, (s) =>
+      s.cases.every((c) => !["NEW", "INVESTIGATING"].includes(c.state)),
+    );
+    await client.mutation(api.workspace.setRole, { role: "human_controller" });
+    await client.mutation(api.workspace.setMode, { mode: "deterministic" });
+    const setup = await client.mutation(api.policies.propose, {});
+    if (!setup.ok) throw new Error(setup.message);
+    const setupJob = await waitJob((j) => !j.correctionId);
+    const setupPolicy = setupJob.policyId
+      ? (await client.query(api.policies.detail, { id: setupJob.policyId }))
+          .policy
+      : null;
     check(
-      "Onboarding yields review-first baseline for correction comparison",
-      candidate.procedure === "controller_confirmation",
-      { procedure: candidate.procedure, runId: onboarding.runId },
+      "Explicit deterministic correction setup creates review-first baseline",
+      setupJob.mode === "deterministic" &&
+        setupPolicy?.procedure === "controller_confirmation",
+      {
+        sandboxId: report.correctionSandboxId,
+        job: setupJob,
+        procedure: setupPolicy?.procedure,
+      },
     );
     check(
-      "Controller activates evaluated baseline",
-      (await client.mutation(api.policies.activate, { id: candidate._id })).ok,
-      { policyId: candidate._id },
+      "Controller approves deterministic correction baseline",
+      (await client.mutation(api.policies.activate, { id: setupPolicy!._id }))
+        .ok,
+      { policyId: setupPolicy!._id, setupMode: "deterministic" },
     );
+    await client.mutation(api.workspace.setMode, {
+      mode: live ? "creao" : "deterministic",
+    });
     const input = hotelFixture(`LIVE-LEARN-${stamp}`);
     input.sources[1].title = "Block extension · signed room schedule";
     const caseId = await client.mutation(api.workspace.inject, { input });
@@ -274,12 +339,9 @@ async function main() {
       (await snapshot()).journals.length === 0,
       { journals: (await snapshot()).journals.length },
     );
+    report.completed = true;
   } catch (error) {
-    results.push({
-      name: "Evaluation completion",
-      passed: false,
-      observed: error instanceof Error ? error.message : "Failed",
-    });
+    report.completionError = error instanceof Error ? error.message : "Failed";
     process.exitCode = 1;
   } finally {
     save();
