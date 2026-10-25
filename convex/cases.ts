@@ -8,7 +8,13 @@ import {
   updateDisputeStatus,
 } from "./team";
 import { applySettlement } from "../src/lib/finance/settlement";
-import { mutation, query, internalMutation } from "./_generated/server";
+import {
+  mutation,
+  query,
+  internalMutation,
+  type QueryCtx,
+} from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { ownedCase, audit, transition } from "./lib";
@@ -23,57 +29,62 @@ import { receipt } from "./validators";
 import { workflow } from "./workflows";
 import { validCorrectionSources } from "../src/lib/finance/learning";
 import { learningAudit } from "./learningRecords";
+export async function readCaseDetail(ctx: QueryCtx, c: Doc<"cases">) {
+  const id = c._id;
+  return {
+    case: c,
+    subtasks: await ctx.db
+      .query("subtasks")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .take(100),
+    disputes: await ctx.db
+      .query("disputes")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .take(30),
+    proposals: await ctx.db
+      .query("proposals")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(30),
+    audit: await ctx.db
+      .query("audit")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(200),
+    approvals: await ctx.db
+      .query("approvals")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(40),
+    questions: await ctx.db
+      .query("questions")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(30),
+    journals: await ctx.db
+      .query("journals")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(20),
+    corrections: await ctx.db
+      .query("corrections")
+      .withIndex("by_caseId_and_responseRevision", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(12),
+    runs: await ctx.db
+      .query("runs")
+      .withIndex("by_caseId", (q) => q.eq("caseId", id))
+      .order("desc")
+      .take(20),
+  };
+}
+
 export const detail = query({
   args: { id: v.id("cases") },
   returns: v.any(),
   handler: async (ctx, { id }) => {
     const { c } = await ownedCase(ctx, id);
-    return {
-      case: c,
-      subtasks: await ctx.db
-        .query("subtasks")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .take(100),
-      disputes: await ctx.db
-        .query("disputes")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .take(30),
-      proposals: await ctx.db
-        .query("proposals")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(30),
-      audit: await ctx.db
-        .query("audit")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(200),
-      approvals: await ctx.db
-        .query("approvals")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(40),
-      questions: await ctx.db
-        .query("questions")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(30),
-      journals: await ctx.db
-        .query("journals")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(20),
-      corrections: await ctx.db
-        .query("corrections")
-        .withIndex("by_caseId_and_responseRevision", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(12),
-      runs: await ctx.db
-        .query("runs")
-        .withIndex("by_caseId", (q) => q.eq("caseId", id))
-        .order("desc")
-        .take(20),
-    };
+    return readCaseDetail(ctx, c);
   },
 });
 export const review = mutation({

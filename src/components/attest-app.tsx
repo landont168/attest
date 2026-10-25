@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity as ActivityIcon,
   ArrowRight,
@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id, Doc } from "../../convex/_generated/dataModel";
-import type { Snapshot, CaseRow, Detail } from "@/lib/view-types";
+import type { Snapshot, CaseRow } from "@/lib/view-types";
 import { money, shortDate, cn, clock } from "@/lib/utils";
 import { hotelFixture } from "@/lib/simulation/fixtures";
 import type { InvoiceInput } from "@/lib/finance/types";
@@ -52,6 +52,7 @@ import { FinanceTeam } from "./finance-team";
 import {
   HUMAN_ROLES,
   ROLE_TITLES,
+  authorizeFinance,
   type HumanRole,
 } from "@/lib/finance/organization";
 import { Investigation } from "./investigation";
@@ -59,6 +60,11 @@ import { VendorLogo } from "./vendor-logo";
 import { BrandLogo } from "./brand-logo";
 import { resolveAuditEvidence } from "@/lib/evidence";
 export type Notify = (message: string, ok?: boolean) => void;
+const datasetNames = {
+  demo: "Demo",
+  history: "Company History",
+  evaluation: "Evaluation",
+};
 const links = [
   { name: "Overview", href: "/overview", icon: LayoutDashboard },
   { name: "Work queue", href: "/work", icon: ListTodo },
@@ -76,16 +82,45 @@ export function AttestApp() {
   const router = useRouter();
   const snapshot = useQuery(api.workspace.snapshot) as
     Snapshot | null | undefined;
+  const isDetail = path.startsWith("/work/");
+  const caseRoute = useQuery(
+    api.caseRoutes.resolve,
+    isDetail ? { id: path.slice("/work/".length).replace(/\/$/, "") } : "skip",
+  );
   const setRole = useMutation(api.workspace.setRole);
   const reset = useMutation(api.workspace.reset);
   const selectDataset = useMutation(api.datasets.select);
   const [mobile, setMobile] = useState(false);
   const [scenario, setScenario] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
   const [toast, setToast] = useState<{ message: string; ok: boolean } | null>(
     null,
   );
   const notify: Notify = (message, ok = true) => setToast({ message, ok });
+  const changeWorkspace = async (
+    operation: () => Promise<{ ok: boolean; message: string }>,
+    returnToQueue = true,
+  ) => {
+    if (workspaceBusy) return;
+    setWorkspaceBusy(true);
+    try {
+      const result = await operation();
+      notify(result.message, result.ok);
+      if (result.ok) {
+        setSettings(false);
+        setScenario(false);
+        if (returnToQueue) router.replace("/work");
+      }
+    } catch (error) {
+      notify(
+        error instanceof Error ? error.message : "Could not change workspace.",
+        false,
+      );
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  };
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(null), 6000);
@@ -102,10 +137,26 @@ export function AttestApp() {
     path === "/"
       ? "Work queue"
       : (links.find((l) => path.startsWith(l.href))?.name ?? "Work queue");
-  const isDetail = path.startsWith("/work/") && path.split("/").length > 2;
-  const currentCase = isDetail
-    ? snapshot.cases.find((c) => c._id === path.split("/")[2])
-    : null;
+  const routeReady =
+    caseRoute?.status === "available" &&
+    caseRoute.sandboxId === snapshot.sandbox._id;
+  const currentCase = routeReady ? caseRoute.detail.case : null;
+  const canCreate = authorizeFinance(
+    { id: snapshot.profile.identity, role: snapshot.profile.role },
+    "ingest",
+  ).ok;
+  const canConfigure = authorizeFinance(
+    { id: snapshot.profile.identity, role: snapshot.profile.role },
+    "configure",
+  ).ok;
+  const openScenario = () => {
+    if (canCreate) setScenario(true);
+    else
+      notify(
+        "This role cannot create cases. Switch to an AP Manager or Finance Controller.",
+        false,
+      );
+  };
   const attention = snapshot.cases.filter((c) =>
     ["PROPOSED", "NEEDS_INFO", "FAILED_RETRYABLE", "REJECTED"].includes(
       c.state,
@@ -240,16 +291,15 @@ export function AttestApp() {
             <label htmlFor="dataset">Dataset </label>
             <select
               id="dataset"
+              disabled={workspaceBusy}
               value={snapshot.sandbox.dataset ?? "legacy"}
               onChange={(e) =>
-                void selectDataset({
-                  dataset: e.target.value as "demo" | "history" | "evaluation",
-                })
-                  .then((r) => {
-                    notify(r.message, r.ok);
-                    if (r.ok) router.push("/work");
-                  })
-                  .catch((e) => notify(e.message, false))
+                void changeWorkspace(() =>
+                  selectDataset({
+                    dataset: e.target.value as
+                      "demo" | "history" | "evaluation",
+                  }),
+                )
               }
             >
               {!snapshot.sandbox.dataset && (
@@ -287,26 +337,60 @@ export function AttestApp() {
             </select>
           </span>
         </div>
-        <main className={cn("main-content", isDetail && "detail-content")}>
-          {isDetail ? (
-            currentCase ? (
+        <main
+          key={snapshot.sandbox._id}
+          className={cn("main-content", isDetail && "detail-content")}
+        >
+          {workspaceBusy ? (
+            <Empty title="Opening workspace…" />
+          ) : isDetail ? (
+            routeReady ? (
               <Investigation
-                id={currentCase._id}
+                key={caseRoute.detail.case._id}
+                data={caseRoute.detail}
                 snapshot={snapshot}
                 notify={notify}
               />
+            ) : caseRoute === undefined || caseRoute.status === "available" ? (
+              <Empty title="Loading case…" />
             ) : (
-              <Empty title="Case not found">
-                This case is not in your current workspace.
+              <Empty
+                title={
+                  caseRoute.status === "archived"
+                    ? "This case is archived"
+                    : caseRoute.status === "other_dataset"
+                      ? "This case is in another dataset"
+                      : "Case unavailable"
+                }
+              >
+                {caseRoute.status === "archived"
+                  ? "Resetting the workspace created new cases. This case’s records are retained in the previous generation."
+                  : caseRoute.status === "other_dataset"
+                    ? `Switch to ${datasetNames[caseRoute.dataset]} to reopen this case.${canConfigure ? "" : " An AP Manager or Finance Controller can switch datasets."}`
+                    : "This link is unavailable in your current browser session. Reopen the invoice from Work queue, or use the browser where you created it."}
+                <span className="case-recovery-actions">
+                  {caseRoute.status === "other_dataset" && canConfigure && (
+                    <Button
+                      onClick={() =>
+                        void changeWorkspace(
+                          () => selectDataset({ dataset: caseRoute.dataset }),
+                          false,
+                        )
+                      }
+                    >
+                      Open {datasetNames[caseRoute.dataset]}
+                    </Button>
+                  )}
+                  <Button asChild variant="outline">
+                    <Link href="/work">Back to work queue</Link>
+                  </Button>
+                </span>
               </Empty>
             )
           ) : current === "Overview" ? (
-            <Overview
-              snapshot={snapshot}
-              onScenario={() => setScenario(true)}
-            />
+            <Overview snapshot={snapshot} onScenario={openScenario} />
           ) : current === "Work queue" ? (
-            <Queue snapshot={snapshot} onScenario={() => setScenario(true)} />
+            <Queue snapshot={snapshot} onScenario={openScenario} />
           ) : current === "Contracts" ? (
             <Contracts snapshot={snapshot} />
           ) : current === "Approvals" ? (
@@ -327,9 +411,11 @@ export function AttestApp() {
         </main>
       </div>
       <ScenarioDialog
+        key={snapshot.sandbox._id}
         open={scenario}
         close={() => setScenario(false)}
         notify={notify}
+        canCreate={canCreate}
       />
       <Dialog
         open={settings}
@@ -349,15 +435,8 @@ export function AttestApp() {
             </div>
             <Button
               variant="outline"
-              onClick={() =>
-                void reset({})
-                  .then((r) => {
-                    notify(r.message);
-                    setSettings(false);
-                    router.push("/work");
-                  })
-                  .catch((e) => notify(e.message, false))
-              }
+              disabled={workspaceBusy}
+              onClick={() => void changeWorkspace(() => reset({}))}
             >
               Reset simulation
             </Button>
@@ -910,10 +989,15 @@ function AuditPage({ snapshot }: { snapshot: Snapshot }) {
     caseId?: Id<"cases">;
     proposalId?: Id<"proposals">;
   } | null>(null);
-  const detail = useQuery(
-    api.cases.detail,
+  const evidenceRoute = useQuery(
+    api.caseRoutes.resolve,
     evidence?.caseId ? { id: evidence.caseId } : "skip",
-  ) as Detail | undefined;
+  );
+  const detail =
+    evidenceRoute?.status === "available" &&
+    evidenceRoute.sandboxId === snapshot.sandbox._id
+      ? evidenceRoute.detail
+      : undefined;
   const evidenceSource =
     evidence && detail
       ? resolveAuditEvidence(detail, evidence.id, evidence.proposalId)
@@ -995,8 +1079,13 @@ function AuditPage({ snapshot }: { snapshot: Snapshot }) {
         <div className="dialog-body">
           {!evidence?.caseId ? (
             <p>No case is associated with this reference.</p>
-          ) : !detail ? (
+          ) : evidenceRoute === undefined ? (
             <p>Loading evidence…</p>
+          ) : !detail ? (
+            <p>
+              This case is no longer available in the current workspace. Reopen
+              it from Work queue.
+            </p>
           ) : evidenceSource ? (
             <>
               <div className="row-between">
@@ -1048,6 +1137,13 @@ function Policies({
   const activate = useMutation(api.policies.activate);
   const inject = useMutation(api.workspace.inject);
   const router = useRouter();
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const [busy, setBusy] = useState(false);
   const run = async (fn: () => Promise<{ message: string; ok: boolean }>) => {
     setBusy(true);
@@ -1187,11 +1283,12 @@ function Policies({
                 input.sources[1].title =
                   "Block extension · signed room schedule";
                 void inject({ input })
-                  .then((id) =>
+                  .then((id) => {
+                    if (!mounted.current) return;
                     id
                       ? router.push(`/work/${id}`)
-                      : notify("This role cannot create cases.", false),
-                  )
+                      : notify("This role cannot create cases.", false);
+                  })
                   .catch((e) => notify(e.message, false));
               }}
             >
@@ -1459,13 +1556,22 @@ function ScenarioDialog({
   open,
   close,
   notify,
+  canCreate,
 }: {
   open: boolean;
   close: () => void;
   notify: Notify;
+  canCreate: boolean;
 }) {
   const inject = useMutation(api.workspace.inject);
   const router = useRouter();
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const [busy, setBusy] = useState(false);
   const [values, setValues] = useState({
     base: 30,
@@ -1495,6 +1601,14 @@ function ScenarioDialog({
     </label>
   );
   const submit = async () => {
+    if (busy) return;
+    if (!canCreate) {
+      notify(
+        "This role cannot create cases. Switch to an AP Manager or Finance Controller.",
+        false,
+      );
+      return;
+    }
     setBusy(true);
     try {
       const input = hotelFixture(
@@ -1528,6 +1642,14 @@ function ScenarioDialog({
       if (!values.evidence)
         input.sources = input.sources.filter((s) => s.kind !== "amendment");
       const id = await inject({ input });
+      if (!mounted.current) return;
+      if (!id) {
+        notify(
+          "This role cannot create cases. Switch to an AP Manager or Finance Controller.",
+          false,
+        );
+        return;
+      }
       close();
       router.push(`/work/${id}`);
       notify("Source records saved. Investigation started automatically.");
@@ -1599,7 +1721,7 @@ function ScenarioDialog({
           <Button variant="outline" type="button" onClick={close}>
             Cancel
           </Button>
-          <Button disabled={busy} type="submit">
+          <Button disabled={busy || !canCreate} type="submit">
             {busy ? "Creating…" : "Create & investigate"}
             <ArrowRight size={14} />
           </Button>

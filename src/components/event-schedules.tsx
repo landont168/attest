@@ -90,6 +90,8 @@ export function EventSchedules({
     }
   };
   if (!feed) return <p className="muted">Loading public event evidence…</p>;
+  const selectedEvent = feed.events.find((event) => event._id === eventId);
+  const selectedBooking = snapshot.cases.find((c) => c._id === selectedCase);
   const latest = feed.jobs[0];
   const active =
     latest &&
@@ -298,18 +300,26 @@ export function EventSchedules({
               />
             </label>
             <Button
-              disabled={busy || !eventId || !selectedCase || !reason.trim()}
-              onClick={() =>
+              disabled={
+                busy || !selectedEvent || !selectedBooking || !reason.trim()
+              }
+              onClick={() => {
+                if (!selectedEvent || !selectedBooking) {
+                  notify(
+                    "Select an event and a booking from the current workspace.",
+                    false,
+                  );
+                  return;
+                }
                 void act(() =>
                   link({
-                    eventId: eventId as Id<"scheduleEvents">,
-                    caseId: selectedCase as Id<"cases">,
-                    expectedVersion: feed.events.find((e) => e._id === eventId)!
-                      .version,
+                    eventId: selectedEvent._id,
+                    caseId: selectedBooking._id,
+                    expectedVersion: selectedEvent.version,
                     reason,
                   }),
-                )
-              }
+                );
+              }}
             >
               Link booking
             </Button>

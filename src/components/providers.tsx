@@ -22,14 +22,25 @@ function Gate({ children }: { children: ReactNode }) {
     }
   }, [isLoading, isAuthenticated, signIn]);
   useEffect(() => {
-    if (isAuthenticated)
-      void initialize({})
-        .then(() => setReady(true))
-        .catch((e) =>
+    if (!isAuthenticated) {
+      setReady(false);
+      return;
+    }
+    started.current = false;
+    let cancelled = false;
+    void initialize({})
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch((e) => {
+        if (!cancelled)
           setError(
             e instanceof Error ? e.message : "Workspace initialization failed.",
-          ),
-        );
+          );
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated, initialize]);
   if (error)
     return (
@@ -46,7 +57,7 @@ function Gate({ children }: { children: ReactNode }) {
         </button>
       </div>
     );
-  if (!ready)
+  if (isLoading || !isAuthenticated || !ready)
     return (
       <div className="setup-page">
         <BrandLogo />

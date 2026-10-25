@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
 import {
   ArrowDown,
@@ -42,15 +43,19 @@ import { EventSchedules } from "./event-schedules";
 import { RetrievalEvidence } from "./retrieval-evidence";
 import { VendorLogo } from "./vendor-logo";
 export function Investigation({
-  id,
+  data,
   snapshot,
   notify,
 }: {
-  id: Id<"cases">;
+  data: Detail;
   snapshot: Snapshot;
   notify: Notify;
 }) {
-  const data = useQuery(api.cases.detail, { id }) as Detail | undefined;
+  const id = data.case._id;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
   const review = useMutation(api.cases.review);
   const resolve = useMutation(api.cases.resolve);
   const resume = useMutation(api.cases.resume);
@@ -74,19 +79,41 @@ export function Investigation({
   const [busy, setBusy] = useState(false);
   const [historical, setHistorical] = useState<Doc<"proposals"> | null>(null);
   useEffect(() => {
-    if (new URLSearchParams(location.search).get("tab") === "calculation")
-      setCalculationOpen(true);
-    const requested = new URLSearchParams(location.search).get("tab");
-    if (requested && ["audit", "team", "evidence"].includes(requested))
-      setTab(requested);
-  }, []);
-  if (!data)
-    return (
-      <div className="loading-content">
-        <div className="skeleton heading-skeleton" />
-        <div className="skeleton content-skeleton" />
-      </div>
+    setCalculationOpen(requestedTab === "calculation");
+    setTab(
+      requestedTab &&
+        [
+          "reconciliation",
+          "schedule",
+          "audit",
+          "team",
+          "evidence",
+          "activity",
+          "decision",
+        ].includes(requestedTab)
+        ? requestedTab
+        : "reconciliation",
     );
+    setSource(null);
+    setHistorical(null);
+    setDialog(null);
+  }, [requestedTab]);
+  const selectTab = (next: string) => {
+    setTab(next);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", next);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+  const changeCalculationOpen = (open: boolean) => {
+    setCalculationOpen(open);
+    if (!open && requestedTab === "calculation") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("tab");
+      router.replace(`${pathname}${params.size ? `?${params}` : ""}`, {
+        scroll: false,
+      });
+    }
+  };
   const c = data.case;
   const proposal = data.proposals.find((p) => p._id === c.proposalId);
   const result = proposal?.result as Result | undefined;
@@ -140,6 +167,10 @@ export function Investigation({
   const canRespond = authorizeFinance(
     { id: snapshot.profile.identity, role: snapshot.profile.role },
     "respond",
+  ).ok;
+  const canIngest = authorizeFinance(
+    { id: snapshot.profile.identity, role: snapshot.profile.role },
+    "ingest",
   ).ok;
   const submit = () => {
     if (dialog === "resolve")
@@ -391,7 +422,7 @@ export function Investigation({
           compact
         />
         <div className="panel-link">
-          <button onClick={() => setTab("activity")}>
+          <button onClick={() => selectTab("activity")}>
             View full execution history
             <ArrowUpRight size={13} />
           </button>
@@ -770,12 +801,15 @@ export function Investigation({
         <Button
           variant="outline"
           size="sm"
-          disabled={busy}
+          disabled={busy || !canIngest}
           onClick={() =>
             void inject({ input })
-              .then(() =>
+              .then((caseId) =>
                 notify(
-                  "Repeated ingestion checked. The existing case was retained.",
+                  caseId
+                    ? "Repeated ingestion checked. The existing case was retained."
+                    : "This role cannot create cases.",
+                  !!caseId,
                 ),
               )
               .catch((e) => notify(e.message, false))
@@ -870,7 +904,7 @@ export function Investigation({
           <button
             key={t.id}
             className={cn(tab === t.id && "selected")}
-            onClick={() => setTab(t.id)}
+            onClick={() => selectTab(t.id)}
           >
             <t.icon size={14} />
             {t.label}
@@ -1065,7 +1099,7 @@ export function Investigation({
       )}
       <Dialog
         open={calculationOpen}
-        onOpenChange={setCalculationOpen}
+        onOpenChange={changeCalculationOpen}
         title="Reconciliation calculation"
         description="Trace the supported charge and invoice difference to their source records."
       >
