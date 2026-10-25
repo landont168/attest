@@ -79,6 +79,12 @@ Attest is a system of work across systems of record.
 
 The hardest problems were deciding which contract version governs a charge, connecting fragmented records, and making uncertainty actionable. Separating interpretation from deterministic financial controls lets Attest ask for evidence or escalate when it cannot safely proceed.
 
+## How we use Convex
+
+- Convex queries keep work, investigation, and approval screens live.
+- Workflows coordinate investigations; mutations record approvals and simulated postings.
+- Convex Auth isolates visitor sandboxes. See the [hackathon log](hackathon.md).
+
 ## Run locally
 
 Use **Node.js 22 or newer**.
