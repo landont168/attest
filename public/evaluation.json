@@ -1,354 +1,379 @@
 {
-  "generatedAt": "2026-10-25T10:42:54.698Z",
-  "revision": "4c40683 + source 2d3c967f3a1e",
-  "total": 69,
-  "passed": 69,
+  "generatedAt": "2026-10-25T13:33:56.842Z",
+  "revision": "98780cf + source 07ef811cdd03",
+  "total": 74,
+  "passed": 74,
   "failed": 0,
   "tests": [
     {
       "name": "uses the v1 endpoint, capi authorization, appId and the saved prompt input",
       "status": "passed",
-      "duration": 10.755666999999988
+      "duration": 47.91604099999995
     },
     {
       "name": "uses the same idempotency key for a repeated submission and a different key for a new attempt",
       "status": "passed",
-      "duration": 2.7708330000000103
+      "duration": 10.759165999999937
     },
     {
       "name": "reads result.text (resultJson wrapper: false) and passes financial validation",
       "status": "passed",
-      "duration": 5.367083999999977
+      "duration": 19.47829200000001
     },
     {
       "name": "reads result.text (resultJson wrapper: true) and passes financial validation",
       "status": "passed",
-      "duration": 2.0559590000000014
+      "duration": 5.5114580000000615
     },
     {
       "name": "rejects an invalid resultJson wrapper (not JSON) without chat fallback",
       "status": "passed",
-      "duration": 1.0687910000000045
+      "duration": 4.9180419999999
     },
     {
       "name": "rejects an invalid resultJson wrapper ([]) without chat fallback",
       "status": "passed",
-      "duration": 0.545708999999988
+      "duration": 1.6867500000000746
     },
     {
       "name": "rejects an invalid resultJson wrapper (null) without chat fallback",
       "status": "passed",
-      "duration": 0.5137080000000083
+      "duration": 2.650082999999995
     },
     {
       "name": "rejects an invalid resultJson wrapper () without chat fallback",
       "status": "passed",
-      "duration": 0.5691249999999854
+      "duration": 2.6710840000000644
     },
     {
       "name": "rejects an invalid resultJson wrapper (null) without chat fallback",
       "status": "passed",
-      "duration": 0.4986250000000041
+      "duration": 2.1153750000000855
     },
     {
       "name": "still rejects wrapped interpretations with string arrays",
       "status": "passed",
-      "duration": 1.606708999999995
+      "duration": 7.38454200000001
     },
     {
       "name": "still rejects wrapped interpretations with invented evidence",
       "status": "passed",
-      "duration": 1.8389589999999885
+      "duration": 5.785417000000052
     },
     {
       "name": "accepts chatText when the completed result has no text",
       "status": "passed",
-      "duration": 0.5867920000000026
+      "duration": 1.5147920000000568
     },
     {
       "name": "does not parse an incomplete result while polling",
       "status": "passed",
-      "duration": 0.7624580000000094
+      "duration": 1.8959159999999429
     },
     {
       "name": "surfaces a failed provider run without a financial result",
       "status": "passed",
-      "duration": 0.68425000000002
+      "duration": 2.0047080000000506
     },
     {
       "name": "surfaces a cancelled provider run without a financial result",
       "status": "passed",
-      "duration": 0.5466669999999851
+      "duration": 3.1377089999999725
     },
     {
       "name": "refuses malformed JSON and records the original response for diagnosis",
       "status": "passed",
-      "duration": 0.7110830000000021
+      "duration": 2.4047090000000253
     },
     {
       "name": "submits policy requests with the same prompt contract and a stable job key",
       "status": "passed",
-      "duration": 0.3606250000000273
+      "duration": 1.1036249999999654
     },
     {
       "name": "sends unambiguous precedent codes and validates live policy citations before creating a candidate",
       "status": "passed",
-      "duration": 10.484541999999976
+      "duration": 28.833082999999988
     },
     {
       "name": "distinguishes HTTP rejection from an uncertain submission without exposing a response body",
       "status": "passed",
-      "duration": 1.0741669999999885
+      "duration": 3.8722080000000005
     },
     {
       "name": "rejects a non-capi key before creating a submission record",
       "status": "passed",
-      "duration": 0.7272920000000056
+      "duration": 1.6252080000000433
+    },
+    {
+      "name": "Persistent financial workflow updates the legacy Harbor Court location once without resetting case history",
+      "status": "passed",
+      "duration": 351.16525
     },
     {
       "name": "Persistent financial workflow automatically investigates ingested invoices with real durable workflow steps",
       "status": "passed",
-      "duration": 108.20941699999997
+      "duration": 100.88925000000006
     },
     {
       "name": "Persistent financial workflow deduplicates re-ingestion and records the repeat",
       "status": "passed",
-      "duration": 37.37712499999998
+      "duration": 95.4759170000001
     },
     {
       "name": "Persistent financial workflow persists denied agent approval and posting without changing case state",
       "status": "passed",
-      "duration": 34.370000000000005
+      "duration": 91.15025000000014
     },
     {
       "name": "Persistent financial workflow approves a dispute without posting a reduced payable",
       "status": "passed",
-      "duration": 43.84387499999997
+      "duration": 85.80229200000008
     },
     {
       "name": "Persistent financial workflow requires controller resolution and creates one balanced posting under repeated execution",
       "status": "passed",
-      "duration": 52.156875000000014
+      "duration": 132.59649999999988
     },
     {
       "name": "Persistent financial workflow retains rejected proposals and resumes with signed missing evidence",
       "status": "passed",
-      "duration": 51.104959000000065
+      "duration": 163.76254200000017
     },
     {
       "name": "Persistent financial workflow posts a linked correction while preserving the original journal",
       "status": "passed",
-      "duration": 30.346541000000002
+      "duration": 96.02591600000005
     },
     {
       "name": "Persistent financial workflow isolates authenticated workspaces and preserves archived history on reset",
       "status": "passed",
-      "duration": 82.774583
+      "duration": 226.51470900000004
     },
     {
       "name": "Persistent financial workflow blocks posting into a closed accounting period",
       "status": "passed",
-      "duration": 39.39325000000008
+      "duration": 82.57837500000005
     },
     {
       "name": "Persistent financial workflow creates a backtested inactive policy and enforces controller activation",
       "status": "passed",
-      "duration": 59.33425
+      "duration": 115.16270800000007
     },
     {
       "name": "Investigation recovery and policy correction starts a fresh provider run after a human response and passes the answer into context",
       "status": "passed",
-      "duration": 35.45416599999999
+      "duration": 99.0897500000001
     },
     {
       "name": "Investigation recovery and policy correction blocks blind resubmission when a provider submission has an unknown outcome",
       "status": "passed",
-      "duration": 27.184834000000023
+      "duration": 76.64295899999979
     },
     {
       "name": "Investigation recovery and policy correction rejects stale investigation completions without replacing an existing proposal",
       "status": "passed",
-      "duration": 26.853166999999985
+      "duration": 75.88591700000006
     },
     {
       "name": "Investigation recovery and policy correction learns from a real controller correction while retaining prior policies and decisions",
       "status": "passed",
-      "duration": 82.70191699999998
+      "duration": 286.1130000000003
+    },
+    {
+      "name": "audit evidence references opens the original proposal clause when an ID is reused",
+      "status": "passed",
+      "duration": 2.557916999999975
+    },
+    {
+      "name": "audit evidence references opens the case source for events before a proposal exists",
+      "status": "passed",
+      "duration": 0.8732909999999947
+    },
+    {
+      "name": "audit evidence references opens evidence appended after the proposal, such as a vendor resolution",
+      "status": "passed",
+      "duration": 0.4986669999999549
+    },
+    {
+      "name": "audit evidence references does not substitute current evidence for an unavailable historical snapshot",
+      "status": "passed",
+      "duration": 0.524915999999962
     },
     {
       "name": "Contract interpretation and financial correctness finds the $750 overcharge while preserving original room rates",
       "status": "passed",
-      "duration": 3.502082999999999
+      "duration": 8.76441699999998
     },
     {
       "name": "Contract interpretation and financial correctness accepts a signed amendment that explicitly supersedes all rates",
       "status": "passed",
-      "duration": 0.26687499999999886
+      "duration": 0.903082999999981
     },
     {
       "name": "Contract interpretation and financial correctness escalates a verbal exception without signed amendment authority",
       "status": "passed",
-      "duration": 0.141042000000013
+      "duration": 0.33416699999997945
     },
     {
       "name": "Contract interpretation and financial correctness accepts a correct multi-line invoice",
       "status": "passed",
-      "duration": 0.12112500000000637
+      "duration": 0.6988749999999868
     },
     {
       "name": "Contract interpretation and financial correctness recalculates changed quantities and rates without invoice-specific branches",
       "status": "passed",
-      "duration": 0.10429100000000346
+      "duration": 0.26387499999998454
     },
     {
       "name": "Contract interpretation and financial correctness supports an original-only agreement",
       "status": "passed",
-      "duration": 0.07895800000000008
+      "duration": 0.4567079999999919
     },
     {
       "name": "Contract interpretation and financial correctness does not apply an amendment effective after the services",
       "status": "passed",
-      "duration": 0.08683400000001029
+      "duration": 0.6617909999999938
     },
     {
       "name": "Contract interpretation and financial correctness rejects conflicting superseding amendments",
       "status": "passed",
-      "duration": 0.14170799999999417
+      "duration": 0.7737920000000145
     },
     {
       "name": "Contract interpretation and financial correctness withholds amounts when confirmed services are missing",
       "status": "passed",
-      "duration": 0.10899999999999466
+      "duration": 1.6676249999999868
     },
     {
       "name": "Contract interpretation and financial correctness detects a wrong vendor on the service confirmation",
       "status": "passed",
-      "duration": 0.11591700000001026
+      "duration": 0.28454099999999016
     },
     {
       "name": "Contract interpretation and financial correctness detects a wrong contract reference on a term",
       "status": "passed",
-      "duration": 0.05749999999999034
+      "duration": 0.19283300000000736
     },
     {
       "name": "Contract interpretation and financial correctness rejects negative or fractional room quantities",
       "status": "passed",
-      "duration": 0.617874999999998
+      "duration": 1.0935420000000136
     },
     {
       "name": "Contract interpretation and financial correctness rejects unsafe monetary arithmetic",
       "status": "passed",
-      "duration": 0.07204199999999616
+      "duration": 0.13462499999997135
     },
     {
       "name": "Contract interpretation and financial correctness rejects non-calendar dates",
       "status": "passed",
-      "duration": 0.04712499999999409
+      "duration": 0.15979099999998425
     },
     {
       "name": "Contract interpretation and financial correctness retains an undercharge as unresolved, not a free reduction",
       "status": "passed",
-      "duration": 0.054583999999991306
+      "duration": 0.24404200000003584
     },
     {
       "name": "Agent output boundary accepts cited, source-backed interpretation and computes money independently",
       "status": "passed",
-      "duration": 0.33591599999999744
+      "duration": 0.692292000000009
     },
     {
       "name": "Agent output boundary rejects hallucinated evidence IDs",
       "status": "passed",
-      "duration": 0.1028750000000116
+      "duration": 0.21424999999999272
     },
     {
       "name": "Agent output boundary rejects wrong invoice identity",
       "status": "passed",
-      "duration": 0.08312500000000966
+      "duration": 0.1389159999999947
     },
     {
       "name": "Agent output boundary rejects incomplete term selection",
       "status": "passed",
-      "duration": 0.09258399999998801
+      "duration": 0.16833400000001575
     },
     {
       "name": "Agent output boundary rejects malformed output",
       "status": "passed",
-      "duration": 0.14716699999999605
+      "duration": 0.30537499999996953
     },
     {
       "name": "Agent output boundary honors explicit agent abstention even with mathematically supported records",
       "status": "passed",
-      "duration": 0.07637499999999875
+      "duration": 0.14812499999999318
     },
     {
       "name": "Authorization and ledger invariants denies agent self-approval",
       "status": "passed",
-      "duration": 0.09283299999999883
+      "duration": 0.07645800000000236
     },
     {
       "name": "Authorization and ledger invariants denies agent direct posting",
       "status": "passed",
-      "duration": 0.031416000000007216
+      "duration": 0.03941600000001699
     },
     {
       "name": "Authorization and ledger invariants requires a controller for resolved discrepancy approval",
       "status": "passed",
-      "duration": 0.0216660000000104
+      "duration": 0.03612500000002683
     },
     {
       "name": "Authorization and ledger invariants does not bypass self-approval by changing a role",
       "status": "passed",
-      "duration": 0.018125000000011937
+      "duration": 0.03587500000003274
     },
     {
       "name": "Authorization and ledger invariants creates a balanced journal in integer cents",
       "status": "passed",
-      "duration": 0.0640420000000006
+      "duration": 0.101333000000011
     },
     {
       "name": "Authorization and ledger invariants rejects unbalanced journal entries",
       "status": "passed",
-      "duration": 0.054874999999995566
+      "duration": 0.078125
     },
     {
       "name": "Authorization and ledger invariants rejects negative financial posting",
       "status": "passed",
-      "duration": 0.043666999999999234
+      "duration": 0.2169579999999769
     },
     {
       "name": "Authorization and ledger invariants does not allow a new or posted case to jump to approval",
       "status": "passed",
-      "duration": 0.02991700000001174
+      "duration": 0.05929199999997081
     },
     {
       "name": "Scoped policy learning reduces redundant review only for supported Meridian schedules",
       "status": "passed",
-      "duration": 0.1097079999999977
+      "duration": 0.16554099999996197
     },
     {
       "name": "Scoped policy learning passes all safety counterexamples for both procedures",
       "status": "passed",
-      "duration": 0.25858399999999904
+      "duration": 1.6213750000000005
     },
     {
       "name": "Source authority and replacement scope does not accept a signed communication as an amendment",
       "status": "passed",
-      "duration": 0.04637499999999761
+      "duration": 0.2723750000000109
     },
     {
       "name": "Source authority and replacement scope requires the original invoice evidence",
       "status": "passed",
-      "duration": 0.045541000000000054
+      "duration": 0.2143750000000182
     },
     {
       "name": "Source authority and replacement scope does not accept an unsigned service record",
       "status": "passed",
-      "duration": 0.04112499999999386
+      "duration": 0.12787500000001728
     },
     {
       "name": "Source authority and replacement scope withholds an inconsistent superseding quantity instead of silently extending its rate",
       "status": "passed",
-      "duration": 0.05866600000000233
+      "duration": 0.13837499999999636
     }
   ]
 }

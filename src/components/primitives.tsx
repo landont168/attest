@@ -115,7 +115,7 @@ export function Activity({
 }: {
   events: Doc<"audit">[];
   compact?: boolean;
-  onEvidence?: (id: string) => void;
+  onEvidence?: (id: string, event: Doc<"audit">) => void;
 }) {
   return (
     <div className={cn("activity-list", compact && "compact")}>
@@ -147,7 +147,7 @@ export function Activity({
                 {e.evidenceIds.length > 0 && (
                   <div className="evidence-chips">
                     {e.evidenceIds.map((id) => (
-                      <button onClick={() => onEvidence?.(id)} key={id}>
+                      <button onClick={() => onEvidence?.(id, e)} key={id}>
                         {id}
                         <ArrowUpRight size={10} />
                       </button>

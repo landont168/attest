@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id, Doc } from "../../convex/_generated/dataModel";
-import type { Snapshot, CaseRow } from "@/lib/view-types";
+import type { Snapshot, CaseRow, Detail } from "@/lib/view-types";
 import { money, shortDate, cn, clock } from "@/lib/utils";
 import { hotelFixture } from "@/lib/simulation/fixtures";
 import type { InvoiceInput } from "@/lib/finance/types";
@@ -48,6 +48,7 @@ import {
 import { Investigation } from "./investigation";
 import { VendorLogo } from "./vendor-logo";
 import { BrandLogo } from "./brand-logo";
+import { resolveAuditEvidence } from "@/lib/evidence";
 export type Notify = (message: string, ok?: boolean) => void;
 const links = [
   { name: "Overview", href: "/overview", icon: LayoutDashboard },
@@ -475,8 +476,8 @@ function Table({ cases }: { cases: CaseRow[] }) {
                     : c.state === "POSTED"
                       ? "Posting gateway"
                       : c.state === "NEEDS_INFO"
-                        ? "Finance controller"
-                        : "AP analyst"}
+                        ? "Finance Controller"
+                        : "AP Analyst"}
                 </small>
               </td>
               <td>
@@ -627,9 +628,7 @@ function Queue({
               <option value="recent">Recent activity</option>
               <option value="amount">Highest amount</option>
             </select>
-            <span className="live-caption">
-              <span className="live-dot" /> Live
-            </span>
+            <span className="live-caption queue-live">Live</span>
           </div>
         </div>
         <Table cases={rows} />
@@ -839,11 +838,13 @@ function Contracts({ snapshot }: { snapshot: Snapshot }) {
                         (s) => s.id === t.sourceId && s.signed,
                       ),
                     ) ? (
-                      <span className="matched-mini">
-                        <Check size={12} /> Signed evidence
+                      <span className="contract-evidence green">
+                        Signed evidence
                       </span>
                     ) : (
-                      <Status state="NEEDS_INFO" />
+                      <span className="contract-evidence contract-needs-info">
+                        Needs information
+                      </span>
                     )}
                   </td>
                   <td>
@@ -862,6 +863,19 @@ function Contracts({ snapshot }: { snapshot: Snapshot }) {
 }
 function AuditPage({ snapshot }: { snapshot: Snapshot }) {
   const [filter, setFilter] = useState("all");
+  const [evidence, setEvidence] = useState<{
+    id: string;
+    caseId?: Id<"cases">;
+    proposalId?: Id<"proposals">;
+  } | null>(null);
+  const detail = useQuery(
+    api.cases.detail,
+    evidence?.caseId ? { id: evidence.caseId } : "skip",
+  ) as Detail | undefined;
+  const evidenceSource =
+    evidence && detail
+      ? resolveAuditEvidence(detail, evidence.id, evidence.proposalId)
+      : undefined;
   const events = snapshot.audit.filter(
     (e) =>
       filter === "all" ||
@@ -894,7 +908,16 @@ function AuditPage({ snapshot }: { snapshot: Snapshot }) {
             </select>
           }
         >
-          <Activity events={events} />
+          <Activity
+            events={events}
+            onEvidence={(id, event) =>
+              setEvidence({
+                id,
+                caseId: event.caseId,
+                proposalId: event.proposalId,
+              })
+            }
+          />
           {!events.length && <Empty title="No matching events" />}
         </Panel>
         <Panel title="Reconstruct a decision">
@@ -920,6 +943,55 @@ function AuditPage({ snapshot }: { snapshot: Snapshot }) {
           </div>
         </Panel>
       </div>
+      <Dialog
+        open={!!evidence}
+        onOpenChange={(open) => !open && setEvidence(null)}
+        title={evidenceSource?.title ?? "Source evidence"}
+        description={evidence?.id}
+        wide
+      >
+        <div className="dialog-body">
+          {!evidence?.caseId ? (
+            <p>No case is associated with this reference.</p>
+          ) : !detail ? (
+            <p>Loading evidence…</p>
+          ) : evidenceSource ? (
+            <>
+              <div className="row-between">
+                <span className="mono">{evidenceSource.id}</span>
+                <span className={evidenceSource.signed ? "green" : "muted"}>
+                  {evidenceSource.signed
+                    ? "Signed / confirmed"
+                    : "Source record"}
+                </span>
+              </div>
+              <div className="document-paper">
+                <div className="document-letterhead">
+                  {detail.case.input.vendor}
+                  <span>
+                    Source document · {shortDate(evidenceSource.date)}
+                  </span>
+                </div>
+                <h3>{evidenceSource.title}</h3>
+                <div className="highlighted-clause">
+                  <strong>{evidenceSource.clause}</strong>
+                  <p>{evidenceSource.text}</p>
+                </div>
+              </div>
+              <Link
+                className="text-button"
+                href={`/work/${evidence.caseId}?tab=audit`}
+              >
+                Open investigation <ArrowUpRight size={13} />
+              </Link>
+            </>
+          ) : (
+            <p>
+              This reference is not available in the event’s evidence snapshot.
+            </p>
+          )}
+        </div>
+      </Dialog>
     </>
   );
 }
@@ -1119,11 +1191,11 @@ function Evaluation() {
       <SectionTitle
         eyebrow="EVIDENCE, NOT ASSURANCES"
         title="Evaluation & trust"
-        description="Executed tests against planted cases with known outcomes."
+        description="Saved results from the finance and backend test suite."
       />
       <Notice>
-        Deterministic and backend tests validate software behavior. Live CREAO
-        accuracy is reported separately only after actual provider execution.
+        This page shows the latest saved test run. Refresh the report with npm
+        run test:report. Opening this page does not run tests.
       </Notice>
       {report ? (
         <>
@@ -1154,7 +1226,7 @@ function Evaluation() {
             />
           </div>
           <Panel
-            title="Test matrix"
+            title="Saved test results"
             meta={
               <small className="muted">
                 {new Date(report.generatedAt).toLocaleString()}
