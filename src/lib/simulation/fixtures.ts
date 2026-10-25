@@ -98,7 +98,7 @@ export function hotelFixture(
 export function scenarios() {
   const main = hotelFixture();
   const valid = hotelFixture("INV-HARBOR-002", "Harbor Court Hotel");
-  valid.destination = "San Francisco, CA";
+  valid.destination = "New York City, NY";
   valid.terms.push({
     id: "TERM-REPLACEMENT",
     sourceId: "AMD-SUPERSEDE",

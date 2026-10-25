@@ -11,6 +11,7 @@ import {
   assert,
 } from "vitest";
 import schema from "./schema";
+import type { CaseRow } from "../src/lib/view-types";
 import { api, internal } from "./_generated/api";
 import { hotelFixture, scenarios } from "../src/lib/simulation/fixtures";
 function required<T>(value: T): NonNullable<T> {
@@ -40,6 +41,33 @@ async function seeded() {
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 describe("Persistent financial workflow", () => {
+  it("updates the legacy Harbor Court location once without resetting case history", async () => {
+    const { t, client, snapshot } = await seeded();
+    const harbor = required(
+      snapshot.cases.find((c: CaseRow) => c.input.code === "INV-HARBOR-002"),
+    );
+    expect(harbor.input.destination).toBe("New York City, NY");
+    await t.run(async (ctx) => {
+      await ctx.db.patch(harbor._id, {
+        input: { ...harbor.input, destination: "San Francisco, CA" },
+      });
+    });
+    await client.mutation(api.workspace.initialize, {});
+    await client.mutation(api.workspace.initialize, {});
+    const updated = required(await client.query(api.workspace.snapshot, {}));
+    const corrected = required(
+      updated.cases.find((c: CaseRow) => c._id === harbor._id),
+    );
+    expect(corrected.input.destination).toBe("New York City, NY");
+    expect(corrected.state).toBe(harbor.state);
+    expect(corrected.proposalId).toBe(harbor.proposalId);
+    expect(updated.cases).toHaveLength(snapshot.cases.length);
+    expect(
+      updated.audit.filter(
+        (a: { action: string }) => a.action === "demo_location_updated",
+      ),
+    ).toHaveLength(1);
+  });
   it("automatically investigates ingested invoices with real durable workflow steps", async () => {
     const { client } = await seeded();
     const s = await client.query(api.workspace.snapshot, {});

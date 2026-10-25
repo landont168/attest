@@ -3,6 +3,7 @@ import { ConvexReactClient, useConvexAuth, useMutation } from "convex/react";
 import { ConvexAuthProvider, useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../../convex/_generated/api";
+import { BrandLogo } from "./brand-logo";
 const url = process.env.NEXT_PUBLIC_CONVEX_URL;
 const client = url ? new ConvexReactClient(url) : null;
 function Gate({ children }: { children: ReactNode }) {
@@ -33,7 +34,7 @@ function Gate({ children }: { children: ReactNode }) {
   if (error)
     return (
       <div className="setup-page">
-        <div className="brand-mark">A</div>
+        <BrandLogo />
         <h1>Connect your workspace</h1>
         <p>{error}</p>
         <p>
@@ -51,7 +52,7 @@ function Gate({ children }: { children: ReactNode }) {
   if (!ready)
     return (
       <div className="setup-page">
-        <div className="brand-mark">A</div>
+        <BrandLogo />
         <h1>Opening Finance Operations</h1>
         <p>Connecting your private simulation workspace…</p>
         <div className="loading-line" />
@@ -63,7 +64,7 @@ export function Providers({ children }: { children: ReactNode }) {
   if (!client)
     return (
       <div className="setup-page">
-        <div className="brand-mark">A</div>
+        <BrandLogo />
         <h1>Attest is ready to connect</h1>
         <p>Set NEXT_PUBLIC_CONVEX_URL in .env.local, then restart the app.</p>
         <code>npm run convex</code>

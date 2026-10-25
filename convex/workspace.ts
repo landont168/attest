@@ -21,7 +21,33 @@ export const initialize = mutation({
         q.eq("identity", identity.tokenIdentifier),
       )
       .unique();
-    if (existing) return existing.sandboxId;
+    if (existing) {
+      // Update the seeded demo location without resetting financial history.
+      const cases = await ctx.db
+        .query("cases")
+        .withIndex("by_sandboxId", (q) => q.eq("sandboxId", existing.sandboxId))
+        .take(40);
+      for (const c of cases) {
+        if (
+          c.input.code === "INV-HARBOR-002" &&
+          c.input.vendor === "Harbor Court Hotel" &&
+          c.input.destination === "San Francisco, CA"
+        ) {
+          await ctx.db.patch(c._id, {
+            input: { ...c.input, destination: "New York City, NY" },
+          });
+          await audit(
+            ctx,
+            c,
+            "demo_location_updated",
+            "Harbor Court Hotel location corrected from San Francisco, CA to New York City, NY.",
+            identity.tokenIdentifier,
+            "sync_job",
+          );
+        }
+      }
+      return existing.sandboxId;
+    }
     const sandboxId = await ctx.db.insert("sandboxes", {
       owner: identity.tokenIdentifier,
       generation: 1,

@@ -46,6 +46,8 @@ import {
   Status,
 } from "./primitives";
 import { Investigation } from "./investigation";
+import { VendorLogo } from "./vendor-logo";
+import { BrandLogo } from "./brand-logo";
 export type Notify = (message: string, ok?: boolean) => void;
 const links = [
   { name: "Overview", href: "/overview", icon: LayoutDashboard },
@@ -79,7 +81,7 @@ export function AttestApp() {
   if (!snapshot)
     return (
       <div className="setup-page">
-        <div className="brand-mark">A</div>
+        <BrandLogo />
         <p>Loading your financial workspace…</p>
       </div>
     );
@@ -100,37 +102,12 @@ export function AttestApp() {
     <div className="app-shell">
       <aside className={cn("sidebar", mobile && "sidebar-open")}>
         <Link className="product-brand" href="/work">
-          <span className="brand-mark">
-            <svg
-              width="28"
-              height="30"
-              viewBox="0 0 28 30"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M3 25 12 5h4l9 20M8 18h12"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-              />
-              <path
-                d="m10 24 3 3 6-7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span>
-            attest<span className="brand-period">.</span>
-          </span>
+          <BrandLogo />
         </Link>
         <div className="org-selector">
           <Image
             className="org-logo"
-            src="/warriors.svg"
+            src="/warriors.png"
             alt="Golden State Warriors"
             width={38}
             height={38}
@@ -185,7 +162,7 @@ export function AttestApp() {
             <div className="person-avatar">
               <Image
                 className="profile-logo"
-                src="/warriors.svg"
+                src="/warriors.png"
                 alt="Golden State Warriors profile"
                 width={30}
                 height={30}
@@ -243,7 +220,7 @@ export function AttestApp() {
             <div className="top-avatar">
               <Image
                 className="profile-logo"
-                src="/warriors.svg"
+                src="/warriors.png"
                 alt="Golden State Warriors profile"
                 width={26}
                 height={26}
@@ -432,18 +409,7 @@ function Table({ cases }: { cases: CaseRow[] }) {
             <tr key={c._id}>
               <td>
                 <Link className="vendor-link" href={`/work/${c._id}`}>
-                  <div
-                    className={cn(
-                      "vendor-avatar",
-                      c.input.vendor.includes("Meridian") && "vendor-meridian",
-                    )}
-                  >
-                    {c.input.vendor
-                      .split(" ")
-                      .map((w) => w[0])
-                      .slice(0, 2)
-                      .join("")}
-                  </div>
+                  <VendorLogo vendor={c.input.vendor} />
                   <div>
                     <strong>{c.input.vendor}</strong>
                     <span>{c.input.code}</span>
@@ -482,18 +448,18 @@ function Table({ cases }: { cases: CaseRow[] }) {
               <td
                 className={cn(
                   "numeric",
-                  c.result?.differenceCents ? "amount-amber" : "muted",
+                  c.result?.differenceCents ? "amount-discrepancy" : "muted",
                 )}
               >
                 {c.result?.differenceCents ? (
                   <Link
                     className="amount-link"
                     href={`/work/${c._id}?tab=calculation`}
-                  >{`${c.result.differenceCents > 0 ? "+" : ""}${money(c.result.differenceCents)}`}</Link>
+                  >
+                    {money(c.result.differenceCents)}
+                  </Link>
                 ) : c.result?.differenceCents === 0 ? (
-                  <span className="matched-mini">
-                    <Check size={12} /> Matched
-                  </span>
+                  <span className="matched-mini">Matched</span>
                 ) : (
                   "—"
                 )}
@@ -608,7 +574,7 @@ function Queue({
           )}
           detail="Under review · not realized savings"
           icon={ShieldCheck}
-          tone="amount-amber"
+          tone="amount-discrepancy"
         />
         <Metric
           label="Posted financial work"
@@ -745,9 +711,7 @@ function Overview({
                 href={`/work/${c._id}`}
                 key={c._id}
               >
-                <div className="vendor-avatar">
-                  {c.input.vendor.slice(0, 1)}
-                </div>
+                <VendorLogo vendor={c.input.vendor} />
                 <div>
                   <strong>{c.input.vendor}</strong>
                   <p>{c.phase}</p>
@@ -759,11 +723,7 @@ function Overview({
         </Panel>
         <Panel
           title="Autonomous activity"
-          meta={
-            <span className="live-caption">
-              <span className="live-dot" /> Live
-            </span>
-          }
+          meta={<span className="live-caption overview-live">Live</span>}
         >
           <Activity events={snapshot.audit.slice(0, 7)} compact />
         </Panel>
@@ -807,7 +767,7 @@ function Approvals({ snapshot }: { snapshot: Snapshot }) {
                 </div>
                 <div>
                   <small>Difference</small>
-                  <strong className="amount-amber">
+                  <strong className="amount-discrepancy">
                     {money(c.result?.differenceCents)}
                   </strong>
                 </div>
@@ -989,132 +949,151 @@ function Policies({
   return (
     <>
       <SectionTitle
-        eyebrow="INSTITUTIONAL MEMORY"
-        title="Policies & precedents"
-        description="A pattern is a proposal. Only an authorized decision makes it policy."
+        title="Policies"
+        description="Evidence rules and approved precedents."
         action={
           <Button disabled={busy} onClick={() => void run(() => propose({}))}>
-            <ActivityIcon size={15} />
-            Learn from history
+            Review history
           </Button>
         }
       />
-      <Notice>
-        Policy learning is scoped to evidence retrieval. It cannot invent rates,
-        override signed contracts, or grant approval authority.
-      </Notice>
+      <div className="policy-boundary">
+        <ShieldCheck size={15} /> Evidence retrieval only{" "}
+        <span>Contracts and approval limits always apply.</span>
+      </div>
       {snapshot.policyRuns
         .filter((j) => j.status !== "completed")
         .map((j) => (
           <Notice key={j._id}>
             {j.status === "failed"
-              ? `Policy investigation failed: ${j.error}`
-              : "Policy investigation running…"}
+              ? `Review failed: ${j.error}`
+              : "Reviewing history…"}
           </Notice>
         ))}
-      <div className="policies-layout">
-        <div>
+      <div className="policies-workspace">
+        <section className="policy-list" aria-label="Policies">
+          <div className="policy-list-heading">
+            <h2>Evidence policies</h2>
+            <span>{snapshot.policies.length} versions</span>
+          </div>
           {snapshot.policies.map((p) => (
-            <Panel key={p._id} className="policy-panel">
-              <div className="panel-body">
-                <div className="row-between">
-                  <span className="eyebrow">
-                    VERSION {p.version} · {p.vendor}
-                  </span>
-                  <Status state={p.status} />
-                </div>
-                <h2>{p.title}</h2>
-                <p>{p.description}</p>
-                <div className="policy-origin">{p.origin}</div>
-                {p.precedentIds.length > 0 && (
-                  <div className="evidence-chips">
-                    {p.precedentIds.map((id) => (
-                      <span key={id}>{id}</span>
-                    ))}
-                  </div>
-                )}
-                {p.checks.length > 0 && (
-                  <div className="policy-checks">
-                    {p.checks.map((c) => (
-                      <div key={c.name}>
-                        <Check
-                          size={13}
-                          className={c.passed ? "green" : "red"}
-                        />
-                        {c.name}
-                        <span>{c.passed ? "Passed" : "Failed"}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="row-between policy-footer">
-                  <small className="muted">
-                    {p.approvedBy
-                      ? `Approved · ${p.approvedBy.startsWith("Synthetic") ? p.approvedBy : "Simulation controller"}`
-                      : "Inactive until controller approval"}
-                  </small>
-                  {p.status === "candidate" && (
-                    <Button
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => void run(() => activate({ id: p._id }))}
-                    >
-                      Approve policy
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </Panel>
-          ))}
-        </div>
-        <div>
-          <Panel title="Historical accountant decisions">
-            <div className="panel-body">
-              {snapshot.precedents.map((p) => (
-                <article className="precedent" key={p._id}>
-                  <div className="row-between">
-                    <span className="mono">{p.code}</span>
-                    {!p.active && (
-                      <span className="status status-red">Expired</span>
-                    )}
-                  </div>
+            <article key={p._id} className="policy-entry">
+              <div className="policy-summary">
+                <div>
                   <h3>{p.title}</h3>
-                  <p>{p.explanation}</p>
-                  <small>{shortDate(p.date)} · Historical record</small>
-                </article>
-              ))}
-            </div>
-          </Panel>
-          <Panel title="Try the evidence procedure">
-            <div className="panel-body">
-              <p className="muted">
-                Create a Meridian block-extension case. Compare review
-                requirements before and after a scoped policy correction.
+                  <div className="policy-scope">
+                    <span>{p.vendor}</span>
+                    <span className="mono">v{p.version}</span>
+                  </div>
+                </div>
+                <Status state={p.status} />
+              </div>
+              <div className="policy-facts">
+                <span>{p.precedentIds.length} precedents</span>
+                <span
+                  className={p.checks.some((c) => !c.passed) ? "red" : "muted"}
+                >
+                  {p.checks.length
+                    ? `${p.checks.filter((c) => c.passed).length}/${p.checks.length} checks passed`
+                    : "Baseline rule"}
+                </span>
+                <span>
+                  {p.approvedBy ? "Controller approved" : "Approval required"}
+                </span>
+              </div>
+              <div className="policy-entry-actions">
+                <details className="policy-details">
+                  <summary>Rule & validation</summary>
+                  <p>{p.description}</p>
+                  <dl>
+                    <div>
+                      <dt>Procedure</dt>
+                      <dd>{p.procedure.replaceAll("_", " ")}</dd>
+                    </div>
+                    <div>
+                      <dt>Origin</dt>
+                      <dd>{p.origin}</dd>
+                    </div>
+                  </dl>
+                  {p.precedentIds.length > 0 && (
+                    <div className="evidence-chips">
+                      {p.precedentIds.map((id) => (
+                        <span key={id}>{id}</span>
+                      ))}
+                    </div>
+                  )}
+                  {p.checks.length > 0 && (
+                    <ul className="policy-validation">
+                      {p.checks.map((c) => (
+                        <li key={c.name}>
+                          <span>{c.name}</span>
+                          <span className={c.passed ? "green" : "red"}>
+                            {c.passed ? "Passed" : "Failed"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </details>
+                {p.status === "candidate" && (
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => void run(() => activate({ id: p._id }))}
+                  >
+                    Approve policy
+                  </Button>
+                )}
+              </div>
+            </article>
+          ))}
+        </section>
+        <aside className="policy-history">
+          <h2>Precedents</h2>
+          {snapshot.precedents.map((p) => (
+            <details className="precedent-entry" key={p._id}>
+              <summary>
+                <span>{p.title}</span>
+                {!p.active && (
+                  <span className="status status-red">Expired</span>
+                )}
+              </summary>
+              <div className="precedent-meta">
+                <span className="mono">{p.code}</span>
+                <time>{shortDate(p.date)}</time>
+              </div>
+              <p>{p.explanation}</p>
+            </details>
+          ))}
+          <div className="policy-trial">
+            <h3>Test a policy</h3>
+            <p>Run a new block-extension case.</p>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                const input = hotelFixture(
+                  `INV-MEM-${Date.now().toString(36).toUpperCase()}`,
+                );
+                input.sources[1].title =
+                  "Block extension · signed room schedule";
+                void inject({ input })
+                  .then((id) => router.push(`/work/${id}`))
+                  .catch((e) => notify(e.message, false));
+              }}
+            >
+              Create test case <ArrowRight size={13} />
+            </Button>
+            <details>
+              <summary>How to test</summary>
+              <p>
+                Compare the review before and after a scoped policy change. If
+                clarification is requested, a controller can cite AMD-HOTEL-001,
+                then propose an improvement from the case.
               </p>
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => {
-                  const input = hotelFixture(
-                    `INV-MEM-${Date.now().toString(36).toUpperCase()}`,
-                  );
-                  input.sources[1].title =
-                    "Block extension · signed room schedule";
-                  void inject({ input })
-                    .then((id) => router.push(`/work/${id}`))
-                    .catch((e) => notify(e.message, false));
-                }}
-              >
-                Create learning case
-                <ArrowRight size={14} />
-              </Button>
-              <p className="small muted">
-                When asked, a controller can cite AMD-HOTEL-001 in their answer,
-                then propose an improvement from that case.
-              </p>
-            </div>
-          </Panel>
-        </div>
+            </details>
+          </div>
+        </aside>
       </div>
     </>
   );

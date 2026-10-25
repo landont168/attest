@@ -163,8 +163,8 @@ input[type="checkbox"] {
 .red {
   color: var(--red);
 }
-.amount-amber {
-  color: var(--amber) !important;
+.amount-discrepancy {
+  color: var(--text-discrepancy) !important;
 }
 .row-between {
   display: flex;
@@ -3734,7 +3734,7 @@ h2,
   height: 5px;
   background: var(--brand-accent);
 }
-.metric-value.amount-amber {
+.metric-value.amount-discrepancy {
   color: var(--amber);
 }
 .case-spotlight {
@@ -4586,7 +4586,7 @@ h3,
 .metric-value {
   color: var(--brand-primary);
 }
-.metric-value.amount-amber {
+.metric-value.amount-discrepancy {
   color: var(--amber);
 }
 .queue-tabs button.selected {
@@ -4698,16 +4698,14 @@ h3,
   object-fit: contain;
 }
 
-/* Layered light surfaces keep white for the records being worked on. */
+/* Neutral workspace; brand color marks actions and contractual evidence. */
 :root {
-  --surface-canvas: #edf1f7;
-  --text-secondary: #596375;
-  --surface-navigation: #e4ebf7;
-  --surface-header: #eaf0fb;
-  --surface-gold: #fff7dc;
+  --surface-canvas: #f6f6f3;
+  --surface-navigation: #f0f1ef;
   --brand-background: var(--surface-canvas);
-  --surface-secondary: #eaf0f8;
-  --border: #d7dfeb;
+  --surface-secondary: #f3f4f5;
+  --border: #dfe2e5;
+  --text-secondary: #596375;
 }
 body,
 .main-shell {
@@ -4715,145 +4713,514 @@ body,
 }
 .sidebar {
   background: var(--surface-navigation);
-  border-right-color: #c7d4e9;
+  border-right-color: var(--border);
 }
 .org-selector {
-  background: var(--surface-gold);
-  border-color: #dbc78a;
-  border-bottom-color: var(--brand-accent);
+  background: transparent;
+  border: 0;
+  padding: 8px 0;
+  border-radius: 0;
 }
 .topbar {
-  background: var(--surface-header);
-  border-bottom-color: #cbd8ee;
+  background: #fafbf9;
+  border-bottom-color: var(--border);
 }
 .environment-strip {
-  background: #e3eaf5;
-  border-bottom-color: #ced8e9;
+  background: transparent;
+  border-bottom-color: var(--border);
 }
 .metrics-grid {
-  padding: 16px 18px;
-  background: #e2eaf8;
-  border: 1px solid #c9d6ec;
-  border-radius: 5px;
+  padding: 0 0 20px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
 }
 .metric-value {
-  color: var(--brand-primary);
+  color: var(--text-primary);
+}
+.metric-value.amount-discrepancy {
+  color: var(--amber);
 }
 .panel {
-  background: var(--surface);
-  border-color: var(--border);
+  box-shadow: none;
+  border-radius: 4px;
 }
 .panel-heading {
-  background: #f3f6fc;
+  background: transparent;
 }
 .queue-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
 }
 .queue-tabs {
-  padding: 0 16px;
-  background: #eaf0fb;
-  border-bottom-color: #cbd8ee;
+  background: transparent;
+  padding: 0;
+  border-bottom-color: var(--border);
 }
 .table-toolbar {
-  padding: 13px 16px;
-  background: #f6f8fc;
+  background: transparent;
+  padding: 13px 0;
 }
 .work-table th {
-  background: #e3ebfa;
-}
-.work-table td {
-  background: transparent;
+  background: #eeefed;
+  color: #596375;
+  border-color: var(--border);
 }
 .work-table tbody {
-  background: var(--surface);
+  background: #fff;
 }
 .work-table tbody tr:nth-child(even) {
-  background: #f7f9fd;
+  background: #fff;
 }
 .work-table tbody tr:hover {
-  background: #edf2fc;
+  background: #f4f6fa;
 }
 .table-footer {
-  padding: 11px 16px;
-  background: #f1f5fb;
+  background: transparent;
+  padding: 11px 0;
 }
 .case-metrics {
-  padding: 16px 18px 0;
-  background: #e2eaf8;
-  border: 1px solid #c9d6ec;
-  border-radius: 5px;
-}
-.case-metrics .metric-discrepancy {
+  padding: 0;
   background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+.case-metrics strong {
+  color: var(--text-primary);
+}
+.case-metrics .metric-discrepancy strong {
+  color: var(--amber);
 }
 .investigation-grid {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 18px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 .investigation-grid .panel {
   background: transparent;
 }
-.investigation-grid .panel-heading {
-  background: transparent;
-}
 .investigation-left {
-  background: #f4f7fc;
-  margin: -18px 0 -18px -18px;
-  padding: 18px;
+  background: transparent;
+  margin: 0;
+  padding: 0 18px 0 0;
+}
+.investigation-center {
+  border-color: var(--border);
 }
 .reconciliation-table th {
-  background: #eaf0fb;
+  background: #eeefed;
+  color: #596375;
 }
 .policy-reference {
-  background: #edf2fb;
+  background: #eeefed;
+  border: 0;
+  border-left: 2px solid #bcc5d4;
+  border-radius: 0;
 }
 .financial-totals > div:first-child {
-  background: #e3ecfc;
+  background: transparent;
+  border-left: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
 }
 .document-paper {
-  background: #fffefa;
+  background: #fff;
 }
 .profile-logo {
   background: transparent;
 }
-@media (max-width: 1350px) and (min-width: 1051px) {
-  .investigation-left {
-    margin-bottom: 0;
-  }
-  .investigation-right {
-    padding-top: 20px;
-  }
+.vendor-logo {
+  --logo-bg: #ecece9;
+  --logo-ink: #455b78;
+  --logo-accent: #b89b51;
+  display: block;
+  flex-shrink: 0;
+  width: 29px;
+  height: 29px;
+}
+.vendor-logo--meridian {
+  --logo-bg: #eee8dd;
+  --logo-ink: #746344;
+}
+.vendor-logo--summit {
+  --logo-bg: #e4ece7;
+  --logo-ink: #355d4c;
+  --logo-accent: #b39554;
+}
+.vendor-logo--pacific {
+  --logo-bg: #e5edf2;
+  --logo-ink: #2f627b;
+  --logo-accent: #c8a85f;
+}
+.vendor-logo--large {
+  width: 44px;
+  height: 44px;
 }
 @media (max-width: 1050px) {
   .investigation-left {
-    margin: 0;
-    padding: 14px;
-    border-radius: 4px;
-  }
-  .investigation-grid {
-    gap: 16px;
-    padding: 16px;
+    padding: 0;
   }
 }
 @media (max-width: 760px) {
   .metrics-grid {
-    padding: 14px;
-  }
-  .table-toolbar {
-    padding: 12px;
+    padding: 0 0 18px;
   }
   .queue-tabs {
-    padding: 0 12px;
+    padding: 0;
+  }
+  .table-toolbar {
+    padding: 12px 0;
   }
   .case-metrics {
-    padding: 0 14px;
+    padding: 0;
   }
   .investigation-grid {
-    padding: 14px;
+    padding: 0;
   }
 }
+
+/* Raster vendor artwork retains its native colors and transparent edges. */
+.vendor-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.vendor-logo--large {
+  width: 48px;
+  height: 48px;
+}
+
+/* The work queue uses text-only statuses. */
+.work-table .status-dot {
+  display: none;
+}
+
+/* Discrepancies are financial findings; amber remains the review status color. */
+:root {
+  --text-discrepancy: #694878;
+}
+.product-brand .brand-period {
+  color: #ffc72c;
+}
+.metric-value.amount-discrepancy,
+.case-metrics .metric-discrepancy strong,
+.financial-totals .difference-row button {
+  color: var(--text-discrepancy);
+}
+.financial-totals .matched-row button {
+  color: var(--green);
+}
+.vendor-logo {
+  width: 112px;
+  height: 38px;
+  object-fit: contain;
+}
+.vendor-logo--large {
+  width: 146px;
+  height: 50px;
+}
+.vendor-link {
+  gap: 16px;
+}
+.vendor-link strong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.vendor-link span {
+  margin-top: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+@media (max-width: 760px) {
+  .vendor-logo--large {
+    width: 116px;
+    height: 42px;
+  }
+}
+
+.overview-columns .status-dot {
+  display: none;
+}
+.overview-live {
+  color: var(--green);
+}
+
+.vendor-wordmark-fallback {
+  display: inline-block;
+  width: 112px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+/* Blue horizontal navigation, with gold reserved for the selected view. */
+.queue-tabs,
+.case-tabs {
+  background: var(--brand-primary);
+  border: 0;
+  padding: 0 16px;
+  border-radius: 4px;
+}
+.queue-tabs button,
+.case-tabs button {
+  color: #dfe8fa;
+}
+.queue-tabs button.selected,
+.case-tabs button.selected {
+  color: #fff;
+}
+.queue-tabs button.selected:after,
+.case-tabs button.selected:after {
+  background: var(--brand-accent);
+  box-shadow: none;
+}
+.queue-tabs button > span,
+.case-tabs button > span {
+  background: #ffffff1a;
+  color: #fff;
+}
+.queue-tabs button.selected > span {
+  background: var(--brand-accent);
+  color: var(--brand-sidebar);
+}
+.case-tabs button {
+  padding: 12px 0;
+}
+.queue-tabs button:focus-visible,
+.case-tabs button:focus-visible {
+  outline-color: var(--brand-accent);
+  outline-offset: -4px;
+}
+.policy-boundary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--brand-primary);
+  font-size: 12px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.policy-boundary > span {
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+.policies-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(250px, 1fr);
+  gap: 32px;
+  margin-top: 24px;
+}
+.policy-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.policy-list-heading > span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.policy-entry {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.policy-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+.policy-summary h3 {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.policy-summary .status-dot {
+  display: none;
+}
+.policy-scope {
+  display: flex;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 6px;
+}
+.policy-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 14px 0;
+}
+.policy-entry-actions {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.policy-details {
+  flex: 1;
+  min-width: 0;
+}
+.policy-details summary,
+.policy-trial summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--brand-primary);
+  width: fit-content;
+}
+.policy-details p,
+.policy-history p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.policy-details dl {
+  font-size: 11px;
+  margin: 12px 0;
+}
+.policy-details dl > div {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+  margin: 8px 0;
+}
+.policy-details dt {
+  color: var(--text-secondary);
+}
+.policy-details dd {
+  margin: 0;
+}
+.policy-validation {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0;
+}
+.policy-validation li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+}
+.policy-history {
+  border-left: 1px solid var(--border);
+  padding-left: 26px;
+}
+.policy-history > h2 {
+  margin-bottom: 14px;
+}
+.precedent-entry {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.precedent-entry summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+.precedent-entry summary .status {
+  margin-left: 8px;
+}
+.precedent-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+.policy-trial {
+  padding-top: 24px;
+}
+.policy-trial h3 {
+  font-size: 13px;
+}
+.policy-trial details {
+  margin-top: 14px;
+}
+@media (max-width: 900px) {
+  .policies-workspace {
+    grid-template-columns: 1fr;
+  }
+  .policy-history {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+@media (max-width: 760px) {
+  .policy-boundary {
+    flex-wrap: wrap;
+  }
+  .policy-boundary > span {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+.attest-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+.attest-symbol {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.attest-brand-name {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.2;
+  color: var(--brand-sidebar);
+}
+.attest-brand-name .brand-period {
+  color: #ffc72c;
+}
+.product-brand {
+  padding-top: 0;
+  padding-bottom: 22px;
+}
+
+/* Workspace context stays distinct from the light investigation surface. */
+.environment-strip {
+  background: var(--brand-primary);
+  color: #fff;
+  border-bottom-color: var(--brand-primary);
+}
+.environment-strip .strip-divider {
+  color: #d2def5;
+}
+.environment-strip .role-switch label {
+  color: #e4ebf8;
+}
+.environment-strip .role-switch select {
+  color: #fff;
+  color-scheme: dark;
+  background: transparent;
+}
+.environment-strip .role-switch select option {
+  color: #fff;
+  background: #1d428a;
+}
+.environment-strip .role-switch select:focus-visible {
+  outline-color: var(--brand-accent);
+}
+

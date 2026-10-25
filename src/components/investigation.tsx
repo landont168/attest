@@ -33,6 +33,7 @@ import { Activity, Empty, Notice, Panel, Status } from "./primitives";
 import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
 import type { Notify } from "./attest-app";
+import { VendorLogo } from "./vendor-logo";
 export function Investigation({
   id,
   snapshot,
@@ -658,13 +659,7 @@ export function Investigation({
       </Link>
       <div className="case-heading">
         <div className="case-identity">
-          <div className="vendor-avatar vendor-large">
-            {input.vendor
-              .split(" ")
-              .map((s) => s[0])
-              .slice(0, 2)
-              .join("")}
-          </div>
+          <VendorLogo vendor={input.vendor} large />
           <div>
             <div className="row-inline">
               <h1>{input.vendor}</h1>
