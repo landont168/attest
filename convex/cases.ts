@@ -11,6 +11,8 @@ import {
 import type { InvoiceInput } from "../src/lib/finance/types";
 import { receipt } from "./validators";
 import { workflow } from "./workflows";
+import { validCorrectionSources } from "../src/lib/finance/learning";
+import { learningAudit } from "./learningRecords";
 export const detail = query({
   args: { id: v.id("cases") },
   returns: v.any(),
@@ -43,6 +45,11 @@ export const detail = query({
         .withIndex("by_caseId", (q) => q.eq("caseId", id))
         .order("desc")
         .take(20),
+      corrections: await ctx.db
+        .query("corrections")
+        .withIndex("by_caseId_and_responseRevision", (q) => q.eq("caseId", id))
+        .order("desc")
+        .take(12),
       runs: await ctx.db
         .query("runs")
         .withIndex("by_caseId", (q) => q.eq("caseId", id))
@@ -168,6 +175,11 @@ export const review = mutation({
       p.identity,
       p.role,
     );
+    if (proposal.correctionId)
+      await ctx.scheduler.runAfter(0, internal.corrections.accept, {
+        proposalId: proposal._id,
+        approvalId,
+      });
     if (proposal.result.disposition === "matched" || c.resolution)
       await ctx.scheduler.runAfter(0, internal.cases.post, {
         id: c._id,
@@ -392,6 +404,12 @@ export const resume = mutation({
   args: {
     id: v.id("cases"),
     answer: v.string(),
+    correction: v.optional(
+      v.object({
+        kind: v.literal("overlooked_signed_schedule"),
+        sourceIds: v.array(v.string()),
+      }),
+    ),
     evidence: v.union(
       v.literal("note"),
       v.literal("signed_amendment"),
@@ -401,11 +419,26 @@ export const resume = mutation({
   returns: receipt,
   handler: async (ctx, args) => {
     const { p, c } = await ownedCase(ctx, args.id);
+    const denyResponse = async (message: string) => {
+      await learningAudit(
+        ctx,
+        p.sandboxId,
+        args.correction
+          ? "correction_recording_denied"
+          : "case_response_denied",
+        message,
+        c.state,
+        c.state,
+        { caseId: c._id },
+        p.identity,
+        p.role,
+        false,
+        args.correction?.sourceIds ?? [],
+      );
+      return { ok: false, message };
+    };
     if (!["NEEDS_INFO", "REJECTED", "FAILED_RETRYABLE"].includes(c.state))
-      return {
-        ok: false,
-        message: "This case is not waiting for a response or retry.",
-      };
+      return denyResponse("This case is not waiting for a response or retry.");
     const runs = await ctx.db
       .query("runs")
       .withIndex("by_caseId", (q) => q.eq("caseId", c._id))
@@ -413,11 +446,9 @@ export const resume = mutation({
       .take(1);
     if (c.state === "FAILED_RETRYABLE" && c.mode === "creao" && !c.runId) {
       if (runs[0]?.status === "submission_pending")
-        return {
-          ok: false,
-          message:
-            "Submission outcome is uncertain. Check the CREAO run before starting a new request.",
-        };
+        return denyResponse(
+          "Submission outcome is uncertain. Check the CREAO run before starting a new request.",
+        );
     }
     if (args.evidence !== "note" && p.role !== "human_controller") {
       await audit(
@@ -436,17 +467,83 @@ export const resume = mutation({
       };
     }
     if (!args.answer.trim())
-      return {
-        ok: false,
-        message: "Describe the clarification or reason for retry.",
-      };
+      return denyResponse("Describe the clarification or reason for retry.");
+    if (args.correction) {
+      const original = c.proposalId ? await ctx.db.get(c.proposalId) : null;
+      const valid =
+        p.role === "human_controller" &&
+        args.evidence === "note" &&
+        original &&
+        original.revision === c.revision &&
+        original.result.disposition === "needs_info" &&
+        c.state === "NEEDS_INFO" &&
+        validCorrectionSources(original.input, args.correction.sourceIds) &&
+        args.correction.sourceIds.every(
+          (id) =>
+            JSON.stringify(original.input.sources.find((s) => s.id === id)) ===
+            JSON.stringify(c.input.sources.find((s) => s.id === id)),
+        );
+      if (!valid) {
+        await learningAudit(
+          ctx,
+          p.sandboxId,
+          "correction_recording_denied",
+          "Correction requires a controller and signed schedules already present in the original unresolved proposal.",
+          c.state,
+          c.state,
+          { caseId: c._id },
+          p.identity,
+          p.role,
+          false,
+          args.correction.sourceIds,
+        );
+        return {
+          ok: false,
+          message:
+            "Select existing signed additional-room schedules on an unresolved proposal as controller. Newly supplied evidence cannot establish an overlooked schedule.",
+        };
+      }
+      const correctionId = await ctx.db.insert("corrections", {
+        sandboxId: p.sandboxId,
+        caseId: c._id,
+        code: `CORR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`,
+        kind: args.correction.kind,
+        originalProposalId: original._id,
+        originalRevision: c.revision,
+        responseRevision: c.revision + 1,
+        ...(original.policyId ? { policyId: original.policyId } : {}),
+        sourceIds: args.correction.sourceIds,
+        sources: original.input.sources.filter((s) =>
+          args.correction!.sourceIds.includes(s.id),
+        ),
+        originalInput: original.input,
+        explanation: args.answer,
+        actor: p.identity,
+        createdAt: Date.now(),
+      });
+      await learningAudit(
+        ctx,
+        p.sandboxId,
+        "correction_recorded",
+        args.answer,
+        "none",
+        "recorded",
+        { correctionId, caseId: c._id },
+        p.identity,
+        p.role,
+        true,
+        args.correction.sourceIds,
+      );
+    }
     const input = structuredClone(c.input);
     if (
       args.evidence === "note" &&
       p.role === "human_controller" &&
-      input.sources.some(
-        (s) => s.signed && s.kind === "amendment" && args.answer.includes(s.id),
-      )
+      (args.correction ||
+        input.sources.some(
+          (s) =>
+            s.signed && s.kind === "amendment" && args.answer.includes(s.id),
+        ))
     )
       input.sources.push({
         id: `CONFIRM-${c.revision + 1}`,

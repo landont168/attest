@@ -1,0 +1,151 @@
+[
+  {
+    "request": {
+      "task": "policy_learning",
+      "context": {
+        "schemaVersion": 1,
+        "vendorId": "VEN-MERIDIAN",
+        "currentPolicy": {
+          "procedure": "controller_confirmation",
+          "version": 1,
+          "description": "Controller confirms ambiguous room-block scope."
+        },
+        "precedents": [
+          {
+            "code": "HIST-MER-101",
+            "active": true,
+            "explanation": "Signed itemized schedule separates room groups.",
+            "vendor": "Meridian Hospitality",
+            "date": "2026-10-20",
+            "title": "Signed itemized schedule separates room groups.",
+            "synthetic": true
+          },
+          {
+            "code": "PREC-CORR-1",
+            "active": true,
+            "explanation": "Accepted correction found the existing signed schedule.",
+            "vendor": "Meridian Hospitality",
+            "date": "2026-10-20",
+            "title": "Accepted correction found the existing signed schedule.",
+            "synthetic": true
+          }
+        ],
+        "corrections": [
+          {
+            "code": "CORR-1",
+            "explanation": "Existing signed schedule resolves the ambiguity.",
+            "kind": "overlooked_signed_schedule",
+            "sourceIds": ["AMD-HOTEL-001"],
+            "sources": [
+              {
+                "id": "AMD-HOTEL-001",
+                "kind": "amendment",
+                "title": "Block extension \u00b7 signed room schedule",
+                "date": "2026-10-20",
+                "clause": "Additional rooms",
+                "signed": true,
+                "text": "Additional rooms retain their separate signed rate."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "illustrativeResponse": {
+      "schemaVersion": 1,
+      "outcome": "candidate",
+      "vendorId": "VEN-MERIDIAN",
+      "procedure": "signed_schedule_first",
+      "description": "Inspect existing signed schedules; controller approval is required before policy activation.",
+      "precedentCodes": ["HIST-MER-101", "PREC-CORR-1"],
+      "correctionCodes": ["CORR-1"]
+    }
+  },
+  {
+    "request": {
+      "task": "policy_learning",
+      "context": {
+        "schemaVersion": 1,
+        "vendorId": "VEN-MERIDIAN",
+        "currentPolicy": {
+          "procedure": "signed_schedule_first",
+          "version": 1,
+          "description": "Inspect existing signed schedules before requesting clarification."
+        },
+        "precedents": [
+          {
+            "code": "HIST-MER-101",
+            "active": true,
+            "explanation": "Signed itemized schedule separates room groups.",
+            "vendor": "Meridian Hospitality",
+            "date": "2026-10-20",
+            "title": "Signed itemized schedule separates room groups.",
+            "synthetic": true
+          },
+          {
+            "code": "PREC-CORR-1",
+            "active": true,
+            "explanation": "Accepted correction found the existing signed schedule.",
+            "vendor": "Meridian Hospitality",
+            "date": "2026-10-20",
+            "title": "Accepted correction found the existing signed schedule.",
+            "synthetic": true
+          }
+        ],
+        "corrections": [
+          {
+            "code": "CORR-1",
+            "explanation": "Existing signed schedule resolves the ambiguity.",
+            "kind": "overlooked_signed_schedule",
+            "sourceIds": ["AMD-HOTEL-001"],
+            "sources": [
+              {
+                "id": "AMD-HOTEL-001",
+                "kind": "amendment",
+                "title": "Block extension \u00b7 signed room schedule",
+                "date": "2026-10-20",
+                "clause": "Additional rooms",
+                "signed": true,
+                "text": "Additional rooms retain their separate signed rate."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "illustrativeResponse": {
+      "schemaVersion": 1,
+      "outcome": "no_change",
+      "vendorId": "VEN-MERIDIAN",
+      "procedure": null,
+      "description": "The active procedure already checks existing signed schedules; no procedure change is supported.",
+      "precedentCodes": [],
+      "correctionCodes": []
+    }
+  },
+  {
+    "request": {
+      "task": "policy_learning",
+      "context": {
+        "schemaVersion": 1,
+        "vendorId": "VEN-MERIDIAN",
+        "currentPolicy": {
+          "procedure": "controller_confirmation",
+          "version": 1,
+          "description": "Controller confirms ambiguous room-block scope."
+        },
+        "precedents": [],
+        "corrections": []
+      }
+    },
+    "illustrativeResponse": {
+      "schemaVersion": 1,
+      "outcome": "insufficient_evidence",
+      "vendorId": "VEN-MERIDIAN",
+      "procedure": null,
+      "description": "No eligible precedents were supplied, so there is insufficient evidence to propose a procedure.",
+      "precedentCodes": [],
+      "correctionCodes": []
+    }
+  }
+]

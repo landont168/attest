@@ -59,3 +59,7 @@ The evaluation screen reads `public/evaluation.json`, generated from actual Vite
 ## Implementation review and next steps
 
 See [architecture and implementation status](docs/implementation.md) for data flow, controls, supported limits, remaining integration work, and production requirements. A live CREAO invoice investigation passed on October 25, 2026: the adapter read the saved agent's `resultJson` wrapper, validated its evidence, and proposed the expected $750 discrepancy against a $12,500 contractual total. A follow-up verification passed missing-evidence escalation, controller-gated policy activation, and the full vendor-resolution-to-simulated-posting flow; see [the live verification report](docs/live-verification.md). No cloud production deployment has been performed.
+
+## Evidence-backed policy learning
+
+See [policy learning](docs/policy-learning.md) for the accepted-correction loop, evaluation gates and technical rules. Create the separate learner using [the setup bundle](agents/policy-learner/README.md). Invoice-agent configuration is unchanged. Live learning requires CREAO_POLICY_AGENT_ID; no live learning verification is claimed until its evaluation report passes.

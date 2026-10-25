@@ -1,4 +1,5 @@
 "use client";
+import { PolicyLearningReview, LearningJobStatus } from "./policy-learning";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -1033,15 +1034,9 @@ function Policies({
         <ShieldCheck size={15} /> Evidence retrieval only{" "}
         <span>Contracts and approval limits always apply.</span>
       </div>
-      {snapshot.policyRuns
-        .filter((j) => j.status !== "completed")
-        .map((j) => (
-          <Notice key={j._id}>
-            {j.status === "failed"
-              ? `Review failed: ${j.error}`
-              : "Reviewing history…"}
-          </Notice>
-        ))}
+      {snapshot.policyRuns.map((job) => (
+        <LearningJobStatus key={job._id} job={job} notify={notify} />
+      ))}
       <div className="policies-workspace">
         <section className="policy-list" aria-label="Policies">
           <div className="policy-list-heading">
@@ -1117,6 +1112,7 @@ function Policies({
                   </Button>
                 )}
               </div>
+              <PolicyLearningReview policy={p} notify={notify} />
             </article>
           ))}
         </section>
@@ -1161,7 +1157,8 @@ function Policies({
               <p>
                 Compare the review before and after a scoped policy change. If
                 clarification is requested, a controller can cite AMD-HOTEL-001,
-                then propose an improvement from the case.
+                select the overlooked schedule, and approve the revised
+                proposal. Learning then starts automatically.
               </p>
             </details>
           </div>
@@ -1314,6 +1311,16 @@ function Integrations({
                 : "Configured · execution not yet verified"
               : "Not configured",
             ready: !!providers?.creao,
+          },
+          {
+            name: "CREAO Policy Learner",
+            label: "Separate learning agent",
+            description:
+              "Proposes evidence-review improvements after accepted corrections; controller approval is required.",
+            status: providers?.policyLearner
+              ? "Configured · see learning results for verification"
+              : "Not configured",
+            ready: !!providers?.policyLearner,
           },
           {
             name: "Moss",

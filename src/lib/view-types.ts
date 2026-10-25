@@ -10,6 +10,7 @@ export type Snapshot = {
   policyRuns: Doc<"policyRuns">[];
   precedents: Doc<"precedents">[];
   journals: Doc<"journals">[];
+  corrections?: Doc<"corrections">[];
 };
 export type Detail = {
   case: Doc<"cases">;
@@ -18,5 +19,6 @@ export type Detail = {
   approvals: Doc<"approvals">[];
   questions: Doc<"questions">[];
   journals: Doc<"journals">[];
+  corrections?: Doc<"corrections">[];
   runs: Doc<"runs">[];
 };

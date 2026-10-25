@@ -61,6 +61,7 @@ export function Investigation({
   const [evidence, setEvidence] = useState<
     "note" | "signed_amendment" | "service_confirmation"
   >("note");
+  const [correctionSources, setCorrectionSources] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [historical, setHistorical] = useState<Doc<"proposals"> | null>(null);
   useEffect(() => {
@@ -102,6 +103,7 @@ export function Investigation({
       if (r.ok) {
         setDialog(null);
         setReason("");
+        setCorrectionSources([]);
       }
     } catch (e) {
       notify(
@@ -122,7 +124,21 @@ export function Investigation({
         }),
       );
     else if (dialog === "answer")
-      void run(() => resume({ id, answer: reason, evidence }));
+      void run(() =>
+        resume({
+          id,
+          answer: reason,
+          evidence,
+          ...(evidence === "note" && correctionSources.length
+            ? {
+                correction: {
+                  kind: "overlooked_signed_schedule" as const,
+                  sourceIds: correctionSources,
+                },
+              }
+            : {}),
+        }),
+      );
     else if (dialog === "reverse") void run(() => reverse({ id, reason }));
     else if (dialog && proposal)
       void run(() =>
@@ -933,7 +949,7 @@ export function Investigation({
                       <small>Human response preserved</small>
                     </article>
                   ))}
-                {data.questions.some((q) => q.answer) && (
+                {(data.corrections?.length ?? 0) > 0 && (
                   <Button
                     variant="outline"
                     disabled={busy}
@@ -942,7 +958,7 @@ export function Investigation({
                     }
                   >
                     <Sparkles size={14} />
-                    Propose policy improvement
+                    View / retain learning investigation
                   </Button>
                 )}
               </div>
@@ -1129,6 +1145,45 @@ export function Investigation({
               </select>
             </label>
           )}
+          {dialog === "answer" &&
+            evidence === "note" &&
+            snapshot.profile.role === "human_controller" &&
+            c.state === "NEEDS_INFO" && (
+              <fieldset className="form-label">
+                <legend>Was an existing signed schedule overlooked?</legend>
+                <p className="small muted">
+                  Select supporting schedules to record a correction. Learning
+                  starts only after the revised proposal is approved.
+                </p>
+                {input.sources
+                  .filter(
+                    (s) =>
+                      s.signed &&
+                      s.kind === "amendment" &&
+                      input.terms.some(
+                        (t) => t.sourceId === s.id && t.scope === "additional",
+                      ),
+                  )
+                  .map((s) => (
+                    <label key={s.id} className="row-between">
+                      <span>
+                        {s.title} · {s.id}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={correctionSources.includes(s.id)}
+                        onChange={(e) =>
+                          setCorrectionSources((xs) =>
+                            e.target.checked
+                              ? [...xs, s.id]
+                              : xs.filter((id) => id !== s.id),
+                          )
+                        }
+                      />
+                    </label>
+                  ))}
+              </fieldset>
+            )}
           <div className="dialog-actions">
             <Button
               variant="outline"
