@@ -3,16 +3,25 @@
 - **Project:** Attest
 - **Event:** Cal Hacks 13.0
 - **What it does:** Investigates synthetic contract-backed invoices, explains evidence-based calculations, and routes simulated financial work for human approval.
-- **Live app:** not deployed
-- **Repo:** https://github.com/landont168/calhacks
-- **Frontend:** not deployed
-- **Convex deployment:** not deployed
+- **Live app:** [Open Attest](https://attest-demo-lemon.vercel.app/work)
+- **Repo:** [Attest](https://github.com/landont168/attest)
+- **Frontend:** [Vercel production](https://attest-demo-lemon.vercel.app) · project `attest-demo`
+- **Convex deployment:** [Production backend](https://rightful-spider-558.convex.cloud) · [dashboard](https://dashboard.convex.dev/t/landon-trinh/attest-demo/rightful-spider-558)
+- **Convex development:** https://utmost-stork-409.convex.cloud · separate development backend
 - **Components:** @convex-dev/workflow
 - **Convex features:** schema, indexes, queries, mutations, actions, HTTP actions, scheduled functions, realtime useQuery
-- **Auth:** Convex Auth
-- **AI models:** none
+- **Auth:** Anonymous Convex Auth with an isolated synthetic workspace per visitor
+- **AI models:** None on the hosted demo; deterministic simulation. Live CREAO, Moss and Apify integrations are not enabled on this deployment.
 - **Started:** 2026-10-25T08:19:35Z
-- **Last updated:** 2026-10-25T16:06:05Z
+- **Last updated:** 2026-10-25T16:18:43Z
+
+## Hosted demo and verification
+
+The Vercel UI and Convex Cloud backend are deployed. New visitors open **Demo (3 cases)** automatically; the Dataset selector also provides **Company History (8 cases)** and **Evaluation (6 cases)**. Financial records, approvals and accounting entries remain simulated.
+
+Live checks passed for anonymous sign-in, dataset switching and persistence after refresh, separate visitor workspaces, controller approval with simulated posting, recorded auditor denials, reset isolation, and direct invoice URLs. The canonical invoice shows $20,000 supported gross, a $3,000 verified deposit, $17,000 remaining due and a $1,000 proposed discrepancy.
+
+Local verification passed **156 TypeScript/backend tests**, **6 learner-contract tests**, **7 Apify actor tests**, TypeScript checking and the production build. These are deterministic test and hosted-workflow results, not live AI quality measurements. See [deployment setup and verification](docs/deployment.md) for details.
 
 ## How we use Convex
 
@@ -43,3 +52,4 @@ Dates and times are UTC; integration-only merges are omitted.
 - 2026-10-25 15:30Z `5d7e9e7` — Merge datasets with Moss and refresh evaluation (`package.json`, `public/evaluation.json`).
 - 2026-10-25 15:48Z `bf567ad` — Add Apify event ingestion (`convex/apify.ts`, `convex/schedules.ts`, `convex/scheduleWorkflow.ts`).
 - 2026-10-25 16:03Z `c087e9b` — Refresh Devpost story and development guide (`README.md`).
+- 2026-10-25 16:16Z — Deploy and verify the hosted synthetic demo on Vercel and Convex Cloud from the deployment workspace; enable per-visitor datasets and retain simulated financial controls (`vercel.json`, `convex/datasets.ts`, `convex/workspace.ts`, `docs/deployment.md`).

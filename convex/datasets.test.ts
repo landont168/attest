@@ -21,6 +21,7 @@ const modules = import.meta.glob("./**/*.ts");
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubEnv("CONVEX_CLOUD_URL", "http://127.0.0.1:3210");
+  vi.stubEnv("ATTEST_HOSTED_DEMO", undefined);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -232,6 +233,95 @@ describe("Separate deterministic datasets", () => {
       }
     }
   });
+});
+describe("Hosted synthetic demo", () => {
+  beforeEach(() => {
+    vi.stubEnv("CONVEX_CLOUD_URL", "https://demo.convex.cloud");
+    vi.stubEnv("ATTEST_HOSTED_DEMO", "true");
+  });
+  it("starts new visitors in Demo and preserves their selected dataset on reload", async () => {
+    const { t, client } = setup();
+    const sandboxId = await client.mutation(api.workspace.initialize, {});
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    const initial = await client.query(api.workspace.snapshot, {});
+    expect(initial?.sandbox).toMatchObject({
+      _id: sandboxId,
+      dataset: "demo",
+      mode: "deterministic",
+    });
+    expect(initial?.cases).toHaveLength(3);
+    expect(await client.mutation(api.workspace.initialize, {})).toBe(sandboxId);
+    await client.mutation(api.datasets.select, { dataset: "history" });
+    const history = await client.query(api.workspace.snapshot, {});
+    expect(history?.cases).toHaveLength(8);
+    expect(await client.mutation(api.workspace.initialize, {})).toBe(
+      history?.sandbox?._id,
+    );
+    await client.mutation(api.datasets.select, { dataset: "evaluation" });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(
+      (await client.query(api.workspace.snapshot, {}))?.cases,
+    ).toHaveLength(6);
+  });
+  it("keeps visitors isolated and archives only the caller's dataset on reset", async () => {
+    const { t, client, s } = await seeded("demo");
+    const other = t.withIdentity({
+      subject: "other-visitor",
+      issuer: "https://test.local",
+      tokenIdentifier: "test|other-visitor",
+    });
+    const otherId = await other.mutation(api.workspace.initialize, {});
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(otherId).not.toBe(s.sandbox?._id);
+    await expect(
+      other.query(api.cases.detail, { id: s.cases[0]._id }),
+    ).rejects.toThrow("Case not found in this workspace");
+    const otherBefore = await other.query(api.workspace.snapshot, {});
+    await client.mutation(api.workspace.reset, {});
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    const reset = await client.query(api.workspace.snapshot, {});
+    expect(reset?.sandbox?.dataset).toBe("demo");
+    expect(reset?.sandbox?._id).not.toBe(s.sandbox?._id);
+    expect(reset?.cases).toHaveLength(3);
+    expect((await t.run((ctx) => ctx.db.get(s.sandbox!._id)))?.archived).toBe(
+      true,
+    );
+    expect((await t.run((ctx) => ctx.db.get(otherId)))?.archived).toBe(false);
+    expect(await other.query(api.workspace.snapshot, {})).toEqual(otherBefore);
+  });
+  it("still requires authentication and records auditor denials", async () => {
+    const { t, client, s } = await seeded("demo");
+    await expect(
+      t.mutation(api.datasets.select, { dataset: "history" }),
+    ).rejects.toThrow("Sign in first");
+    await client.mutation(api.workspace.setRole, { role: "internal_auditor" });
+    expect(
+      (
+        await client.mutation(api.datasets.select, {
+          dataset: "history",
+        })
+      ).ok,
+    ).toBe(false);
+    expect((await client.mutation(api.workspace.reset, {})).ok).toBe(false);
+    const after = await client.query(api.workspace.snapshot, {});
+    expect(after?.sandbox?._id).toBe(s.sandbox?._id);
+    expect(
+      after?.audit.some((a) => a.action === "configure_denied" && !a.allowed),
+    ).toBe(true);
+  });
+  it.each([undefined, "false", "1"])(
+    "requires explicit opt-in, rejecting %s",
+    async (setting) => {
+      vi.stubEnv("ATTEST_HOSTED_DEMO", setting);
+      const { t, client } = setup();
+      await expect(
+        client.mutation(api.datasets.select, { dataset: "demo" }),
+      ).rejects.toThrow("explicitly enabled hosted demo");
+      expect(await t.run((ctx) => ctx.db.query("sandboxes").take(1))).toEqual(
+        [],
+      );
+    },
+  );
 });
 describe("Six adversarial evaluations — deterministic backend, no LLM", () => {
   for (const answer of datasetAnswers)

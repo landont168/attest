@@ -32,6 +32,7 @@ type Env = {
   readonly CONVEX_SITE_URL: string;
   readonly APIFY_ACTOR_ID: string | undefined;
   readonly APIFY_API_TOKEN: string | undefined;
+  readonly ATTEST_HOSTED_DEMO: string | undefined;
   readonly CREAO_AGENT_ID: string | undefined;
   readonly CREAO_API_KEY: string | undefined;
   readonly CREAO_POLICY_AGENT_ID: string | undefined;

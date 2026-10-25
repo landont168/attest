@@ -19,14 +19,15 @@ const datasetValidator = v.union(
   v.literal("history"),
   v.literal("evaluation"),
 );
-export function requireLocalDatasetTarget() {
+export function requireDatasetTarget() {
+  if (env.ATTEST_HOSTED_DEMO === "true") return;
   let host = "";
   try {
     host = new URL(env.CONVEX_CLOUD_URL ?? "").hostname;
   } catch {}
   if (!["localhost", "127.0.0.1", "[::1]"].includes(host))
     throw new Error(
-      "Dataset seed/reset is restricted to a local development backend.",
+      "Dataset seed/reset requires a local development backend or an explicitly enabled hosted demo.",
     );
 }
 async function seedCase(
@@ -193,7 +194,7 @@ export async function selectDataset(
   dataset: Dataset,
   reset = false,
 ): Promise<{ ok: boolean; message: string }> {
-  requireLocalDatasetTarget();
+  requireDatasetTarget();
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Sign in first.");
   const existingProfile = await ctx.db

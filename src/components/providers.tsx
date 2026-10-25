@@ -37,10 +37,7 @@ function Gate({ children }: { children: ReactNode }) {
         <BrandLogo />
         <h1>Connect your workspace</h1>
         <p>{error}</p>
-        <p>
-          Check that the local Convex server and authentication configuration
-          are running.
-        </p>
+        <p>The demo could not connect. Try again in a moment.</p>
         <button
           className="button button-primary"
           onClick={() => location.reload()}
@@ -66,8 +63,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <div className="setup-page">
         <BrandLogo />
         <h1>Attest is ready to connect</h1>
-        <p>Set NEXT_PUBLIC_CONVEX_URL in .env.local, then restart the app.</p>
-        <code>npm run convex</code>
+        <p>The demo connection has not been configured yet.</p>
         <p>Every number has a reason.</p>
       </div>
     );

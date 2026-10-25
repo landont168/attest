@@ -1,6 +1,6 @@
 # Three synthetic datasets
 
-Use the **Dataset** selector beside “Acting as” to load Demo, Company History, or Evaluation into your own authenticated workspace. Existing original workspaces remain intact. Dataset creation/reset is restricted server-side to a local development backend.
+Use the **Dataset** selector beside “Acting as” to load Demo, Company History, or Evaluation into your own authenticated workspace. Existing original workspaces remain intact. Dataset creation/reset requires a local development backend or `ATTEST_HOSTED_DEMO=true` set server-side on a dedicated hosted demo deployment. Hosted-demo visitors start in Demo automatically; subsequent visits retain their selected dataset. Authentication, role checks and per-visitor isolation apply in both environments. See [deployment setup](deployment.md).
 
 | Dataset | Cases / invoices | Vendor references | Contract references | Bank payments | Deposit allocations |
 |---|---:|---:|---:|---:|---:|
@@ -24,7 +24,7 @@ npm run seed:demo -- --reset
 
 The first three commands idempotently select/seed a separate dataset. `evaluate:datasets` creates a fresh evaluation generation and runs all six checks through the local deterministic backend. Reset archives only the selected dataset generation; it never deletes financial history. In the UI, Simulation settings → Reset simulation preserves the selected dataset type.
 
-CLI commands use a dedicated anonymous seed identity, persisted securely in ignored `.context/dataset-session.json`. They do not modify the browser user's private workspace. Use the browser Dataset selector to load the same fixtures for the live demo. Repeated CLI commands refresh the same identity and reuse stable invoice, source and payment codes; Convex document IDs remain stable within a generation and change only on explicit reset. Cloud/production targets and deploy-key overrides are refused.
+CLI commands use a dedicated anonymous seed identity, persisted securely in ignored `.context/dataset-session.json`. They do not modify the browser user's private workspace. Use the browser Dataset selector to load the same fixtures for the live demo. Repeated CLI commands refresh the same identity and reuse stable invoice, source and payment codes; Convex document IDs remain stable within a generation and change only on explicit reset. The CLI commands still refuse cloud/production targets and deploy-key overrides; hosted visitors load fixtures through the authenticated UI.
 
 ## Demo
 

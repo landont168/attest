@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import workflow from "@convex-dev/workflow/convex.config.js";
 const app = defineApp({
   env: {
+    ATTEST_HOSTED_DEMO: v.optional(v.string()),
     CREAO_API_KEY: v.optional(v.string()),
     CREAO_AGENT_ID: v.optional(v.string()),
     CREAO_POLICY_AGENT_ID: v.optional(v.string()),
