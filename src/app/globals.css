@@ -3685,7 +3685,7 @@ h2,
   font-weight: 650;
 }
 .topbar {
-  border-top: 3px solid var(--brand-primary);
+  border-top: 0;
 }
 .top-avatar {
   background: var(--brand-gold-tint);
@@ -4555,7 +4555,7 @@ h3,
   background: var(--brand-accent);
 }
 .topbar {
-  border-top: 2px solid var(--brand-primary);
+  border-top: 0;
 }
 .product-brand .brand-period {
   color: var(--brand-gold-ink);
