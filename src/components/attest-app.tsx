@@ -149,13 +149,6 @@ export function AttestApp() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="workspace-health">
-            <span className="live-dot" />
-            <div>
-              <strong>Workspace connected</strong>
-              <small>Team travel operations</small>
-            </div>
-          </div>
           <button className="nav-item" onClick={() => setSettings(true)}>
             <Settings2 size={16} />
             <span>Workspace settings</span>
@@ -177,7 +170,7 @@ export function AttestApp() {
                   ? "Finance Controller"
                   : "AP Analyst"}
               </strong>
-              <small>Finance operations</small>
+              <small>Finance Operations</small>
             </div>
             <ChevronDown size={13} />
           </div>
@@ -651,7 +644,7 @@ function Overview({
   return (
     <>
       <SectionTitle
-        eyebrow="Finance operations"
+        eyebrow="Finance Operations"
         title="Finance overview"
         description="Golden State Warriors · Team Travel Operations"
         action={
