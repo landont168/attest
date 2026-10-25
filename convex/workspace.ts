@@ -1,7 +1,7 @@
 import { selectDataset } from "./datasets";
 import { ensureOrganization, seedPaymentRecords } from "./team";
 import { financeTeamScenarios } from "../src/lib/simulation/finance-team";
-import { mutation, query } from "./_generated/server";
+import { env, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { workflow } from "./workflows";
@@ -61,6 +61,10 @@ export const initialize = mutation({
           existing.role,
         );
       return existing.sandboxId;
+    }
+    if (env.ATTEST_HOSTED_DEMO === "true") {
+      await selectDataset(ctx, "demo");
+      return (await profile(ctx)).sandboxId;
     }
     const sandboxId = await ctx.db.insert("sandboxes", {
       owner: identity.tokenIdentifier,

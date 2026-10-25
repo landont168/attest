@@ -2,6 +2,8 @@
 
 _An autonomous accounts payable platform_
 
+[Open the hosted synthetic demo](https://attest-demo-lemon.vercel.app/work) · [Attest on GitHub](https://github.com/landont168/attest)
+
 Attest investigates financial exceptions across contracts, amendments, operational records, invoices, and payments. It reconstructs what a company owes, explains discrepancies with supporting evidence, and coordinates the work needed to resolve them.
 
 ## 🏀 Inspiration
@@ -84,6 +86,14 @@ The hardest problems were deciding which contract version governs a charge, conn
 - Convex queries keep work, investigation, and approval screens live.
 - Workflows coordinate investigations; mutations record approvals and simulated postings.
 - Convex Auth isolates visitor sandboxes. See the [hackathon log](hackathon.md).
+
+## Hosted synthetic demo
+
+The [live demo](https://attest-demo-lemon.vercel.app/work) runs on Vercel with a dedicated Convex Cloud backend. New visitors sign in anonymously and start with the three-case Demo. Company History and Evaluation are available through the Dataset selector, and each visitor's records remain isolated.
+
+The checked-in `vercel.json` deploys the backend and UI together, passing the cloud backend URL to the frontend build. `ATTEST_HOSTED_DEMO=true` on the dedicated Convex deployment enables dataset selection and automatic Demo initialization. Existing visitors retain their selected workspace.
+
+The hosted demo runs in deterministic simulation mode; live CREAO, Moss and Apify integrations are not enabled there. See [deployment setup and measured verification](docs/deployment.md) for configuration, live URLs and checks.
 
 ## Run locally
 
@@ -208,7 +218,7 @@ npm run build
 npm run evaluate:datasets
 ```
 
-The latest [recorded verification](docs/apify-schedules.md#measured-result--october-25-2026) passed **150 TypeScript/backend tests**, **seven Apify Actor tests**, **six Policy Learner tests**, typechecking, and the production build. The six dataset evaluations also passed through the local deterministic backend before the Moss merge. These checks cover financial rules, source references, duplicate posting, workspace isolation, stale decisions, corrections, authorization, retrieval, and policy learning.
+The latest [recorded verification](docs/deployment.md#verified-release--october-25-2026) passed **156 TypeScript/backend tests**, **seven Apify Actor tests**, **six Policy Learner tests**, typechecking, and the production build. The six dataset evaluations also passed through the local deterministic backend before the Moss merge. These checks cover financial rules, source references, duplicate posting, workspace isolation, stale decisions, corrections, authorization, retrieval, and policy learning.
 
 The Evaluation screen reads `public/evaluation.json`, generated from executed Vitest assertions with a source hash and timestamp. This is not a live AI accuracy benchmark. Workflow-component logging during tests is expected. No lint script is currently configured.
 
@@ -221,7 +231,7 @@ npm run evaluate:moss:live
 npm run evaluate:apify:live
 ```
 
-The live commands require their respective configured providers and contact external services. Reports are retained under `.context/`. See [invoice live verification](docs/live-verification.md), [policy learning verification](docs/policy-learning-verification.md), [Moss verification](docs/moss-retrieval.md), and [Apify verification](docs/apify-schedules.md#verification) for the scope and limitations of recorded runs. No cloud production deployment is claimed.
+The live commands require their respective configured providers and contact external services. Reports are retained under `.context/`. See [invoice live verification](docs/live-verification.md), [policy learning verification](docs/policy-learning-verification.md), [Moss verification](docs/moss-retrieval.md), and [Apify verification](docs/apify-schedules.md#verification) for the scope and limitations of recorded runs. The hosted synthetic demo is deployed to Vercel and Convex Cloud; the earlier live-provider verification results do not imply those providers are enabled on that deployment.
 
 ## What we learned and what’s next
 
