@@ -10,6 +10,7 @@
 
 import type * as apify from "../apify.js";
 import type * as auth from "../auth.js";
+import type * as caseRoutes from "../caseRoutes.js";
 import type * as cases from "../cases.js";
 import type * as corrections from "../corrections.js";
 import type * as creao from "../creao.js";
@@ -39,6 +40,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   apify: typeof apify;
   auth: typeof auth;
+  caseRoutes: typeof caseRoutes;
   cases: typeof cases;
   corrections: typeof corrections;
   creao: typeof creao;

@@ -12,6 +12,7 @@ import {
   type HumanRole,
 } from "@/lib/finance/organization";
 import { money, clock } from "@/lib/utils";
+import { parseUsdCents } from "@/lib/money-input";
 import type { Snapshot, Detail } from "@/lib/view-types";
 import type { Notify } from "./attest-app";
 import { Button } from "./ui/button";
@@ -43,6 +44,24 @@ export function FinanceTeam({
   const configure = useMutation(api.team.configureLimit);
   const [selected, setSelected] = useState("ap");
   const [limit, setLimit] = useState("");
+  const [busy, setBusy] = useState(false);
+  const act = async (fn: () => Promise<{ ok: boolean; message: string }>) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await fn();
+      notify(result.message, result.ok);
+    } catch (error) {
+      notify(
+        error instanceof Error
+          ? error.message
+          : "The action could not be completed.",
+        false,
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
   if (!data) return <Empty title="Loading finance team…" />;
   const person = data.employees.find((e) => e.code === selected);
   const definition = EMPLOYEES.find((e) => e.code === selected);
@@ -201,10 +220,9 @@ export function FinanceTeam({
               {person.kind === "human" && (
                 <Button
                   variant="outline"
+                  disabled={busy}
                   onClick={() =>
-                    void setRole({ role: person.role as HumanRole }).then((r) =>
-                      notify(r.message, r.ok),
-                    )
+                    void act(() => setRole({ role: person.role as HumanRole }))
                   }
                 >
                   Act as this role
@@ -298,10 +316,15 @@ export function FinanceTeam({
           className="team-approval-settings"
           onSubmit={(e) => {
             e.preventDefault();
-            const cents = Number(limit) * 100;
-            void configure({ limitCents: cents }).then((r) =>
-              notify(r.message, r.ok),
-            );
+            const cents = parseUsdCents(limit);
+            if (cents === null || cents > 100_000_000) {
+              notify(
+                "Enter a limit from $0 to $1,000,000 with at most two decimal places.",
+                false,
+              );
+              return;
+            }
+            void act(() => configure({ limitCents: cents }));
           }}
         >
           <h2>Demo authorization policy</h2>
@@ -314,6 +337,7 @@ export function FinanceTeam({
             <input
               type="number"
               min="0"
+              max="1000000"
               step="0.01"
               value={limit}
               placeholder={String(data.approvalLimitCents / 100)}
@@ -321,7 +345,9 @@ export function FinanceTeam({
               required
             />
           </label>
-          <Button type="submit">Update limit</Button>
+          <Button disabled={busy} type="submit">
+            Update limit
+          </Button>
         </form>
       )}
     </>

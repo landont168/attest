@@ -2323,6 +2323,13 @@ input[type="checkbox"] {
   max-width: 380px;
   margin: auto;
 }
+.case-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
 .setup-page {
   min-height: 100vh;
   display: flex;
