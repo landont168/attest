@@ -20,7 +20,17 @@ const names = [
   ...["CREAO_POLICY_AGENT_ID", "CREAO_POLICY_API_KEY"].filter((name) =>
     credentials[name]?.trim(),
   ),
+  ...["MOSS_PROJECT_ID", "MOSS_PROJECT_KEY"].filter((name) =>
+    credentials[name]?.trim(),
+  ),
 ];
+if (
+  !!credentials.MOSS_PROJECT_ID?.trim() !==
+  !!credentials.MOSS_PROJECT_KEY?.trim()
+)
+  throw new Error(
+    "Fill both MOSS_PROJECT_ID and MOSS_PROJECT_KEY, or leave both empty.",
+  );
 const missing = requiredNames.filter((name) => !credentials[name]?.trim());
 if (missing.length) {
   console.error(
@@ -53,7 +63,7 @@ for (const name of names) {
 console.log(
   "Configuration saved. Select Live CREAO in Integrations and create a new case to verify a real run.",
 );
-if (credentials.MOSS_PROJECT_ID || credentials.MOSS_PROJECT_KEY)
+if (credentials.MOSS_PROJECT_ID?.trim() && credentials.MOSS_PROJECT_KEY?.trim())
   console.log(
-    "Moss credentials were not applied: the optional retrieval adapter is not implemented.",
+    "Moss configured. New investigations and learning jobs will record retrieval outcomes. Run npm run evaluate:moss:live to verify.",
   );

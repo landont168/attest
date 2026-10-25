@@ -1335,9 +1335,15 @@ function Integrations({
             name: "Moss",
             label: "Historical retrieval",
             description:
-              "Optional semantic retrieval. Current investigations use structured Convex evidence lookup.",
-            status: "Not implemented",
-            ready: false,
+              "Finds relevant signed clauses and historical decisions. Convex revalidates every match before use.",
+            status: !providers?.moss
+              ? "Not configured · structured lookup active"
+              : providers.mossLastOutcome === "moss"
+                ? "Search completed · see recorded evidence"
+                : providers.mossLastOutcome === "unavailable"
+                  ? "Search unavailable · structured lookup active"
+                  : "Configured · awaiting a new search",
+            ready: !!providers?.moss,
           },
         ].map((i) => (
           <Panel key={i.name}>

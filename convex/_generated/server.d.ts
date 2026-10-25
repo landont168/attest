@@ -34,6 +34,8 @@ type Env = {
   readonly CREAO_API_KEY: string | undefined;
   readonly CREAO_POLICY_AGENT_ID: string | undefined;
   readonly CREAO_POLICY_API_KEY: string | undefined;
+  readonly MOSS_PROJECT_ID: string | undefined;
+  readonly MOSS_PROJECT_KEY: string | undefined;
 };
 
 /**

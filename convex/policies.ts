@@ -150,7 +150,7 @@ export const context = internalQuery({
         runId: job.runId ?? null,
         submissionStatus: job.submissionStatus ?? null,
       },
-      context: JSON.parse(job.contextJson),
+      context: JSON.parse(job.proposalContextJson ?? job.contextJson),
     };
   },
 });
@@ -165,6 +165,14 @@ export const noteRun = internalMutation({
   handler: async (ctx, args) => {
     const job = await ctx.db.get(args.jobId);
     if (!job || job.status !== "running") return null;
+    if (args.runId) {
+      const search = await ctx.db
+        .query("retrievals")
+        .withIndex("by_jobId", (q) => q.eq("jobId", job._id))
+        .unique();
+      if (search && !search.passedToAgent)
+        await ctx.db.patch(search._id, { passedToAgent: true });
+    }
     await ctx.db.patch(job._id, {
       submissionStatus: args.status,
       ...(args.runId ? { runId: args.runId } : {}),
@@ -197,7 +205,12 @@ export const finish = internalMutation({
       const context: LearningContext = JSON.parse(job.contextJson);
       const out =
         job.mode === "creao"
-          ? validatePolicyOutput(args.raw, context)
+          ? validatePolicyOutput(
+              args.raw,
+              job.proposalContextJson
+                ? JSON.parse(job.proposalContextJson)
+                : context,
+            )
           : simulateLearning(context);
       if (out.outcome !== "candidate") {
         await ctx.db.patch(job._id, {

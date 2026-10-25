@@ -6,6 +6,7 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import type { compareProcedures } from "@/lib/finance/learning";
 import type { Notify } from "./attest-app";
 import { Button } from "./ui/button";
+import { RetrievalEvidence } from "./retrieval-evidence";
 import { Notice } from "./primitives";
 
 export function LearningJobStatus({
@@ -46,6 +47,7 @@ export function LearningJobStatus({
           Retry / resume learning
         </Button>
       )}
+      <RetrievalEvidence jobId={job._id} />
     </Notice>
   );
 }
@@ -93,6 +95,7 @@ export function PolicyLearningReview({
             <p>Loading…</p>
           ) : (
             <>
+              {policy.jobId && <RetrievalEvidence jobId={policy.jobId} />}
               {detail.correction && (
                 <p>
                   Accepted correction: {detail.correction.explanation} ·{" "}
