@@ -110,6 +110,14 @@ export function applySettlement(
   if (issues.length)
     return {
       ...result,
+      evidenceIds: [
+        ...new Set([
+          ...result.evidenceIds,
+          ...finding.sourceIds.filter((id) =>
+            input.sources.some((source) => source.id === id),
+          ),
+        ]),
+      ],
       disposition: "needs_info",
       expectedCents: null,
       differenceCents: null,

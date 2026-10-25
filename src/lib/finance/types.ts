@@ -40,7 +40,7 @@ export const inputSchema = z.object({
   end: z.string(),
   invoiceDate: z.string(),
   currency: z.literal("USD"),
-  unit: z.literal("room-night"),
+  unit: z.enum(["room-night", "flight-leg", "trip"]),
   lines: z
     .array(
       z.object({

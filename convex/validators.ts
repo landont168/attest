@@ -80,7 +80,11 @@ export const invoiceInput = v.object({
   end: v.string(),
   invoiceDate: v.string(),
   currency: v.literal("USD"),
-  unit: v.literal("room-night"),
+  unit: v.union(
+    v.literal("room-night"),
+    v.literal("flight-leg"),
+    v.literal("trip"),
+  ),
   lines: v.array(
     v.object({
       label: v.string(),

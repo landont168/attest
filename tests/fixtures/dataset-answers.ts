@@ -1,0 +1,51 @@
+// Evaluation-only answer keys. Never import into convex/ or src/ runtime modules.
+export const datasetAnswers = [
+  {
+    code: "EVAL-001",
+    expectedCents: 310700,
+    differenceCents: 0,
+    state: "PROPOSED",
+    evidence: ["AMD-EVAL-001", "SERVICE-EVAL-001"],
+    authorization: "awaiting_human_review",
+  },
+  {
+    code: "EVAL-002",
+    expectedCents: 487900,
+    differenceCents: 0,
+    state: "PROPOSED",
+    evidence: ["AMD-EVAL-002", "SERVICE-EVAL-002"],
+    authorization: "awaiting_human_review",
+  },
+  {
+    code: "EVAL-003",
+    expectedCents: null,
+    differenceCents: null,
+    state: "NEEDS_INFO",
+    evidence: ["BANK-EVAL-003"],
+    authorization: "withheld",
+  },
+  {
+    code: "EVAL-004",
+    expectedCents: null,
+    differenceCents: null,
+    state: "NEEDS_INFO",
+    evidence: ["AMD-EVAL-004"],
+    authorization: "withheld",
+  },
+  {
+    code: "EVAL-005",
+    expectedCents: 249600,
+    differenceCents: 0,
+    state: "PROPOSED",
+    evidence: ["CTR-EVAL-KEYSTONE-2026", "SERVICE-EVAL-005"],
+    authorization: "agent_denied_and_audited",
+  },
+  {
+    code: "EVAL-006",
+    expectedCents: 716875,
+    differenceCents: 49950,
+    state: "PROPOSED",
+    evidence: ["CTR-EVAL-JUNIPER-2026", "SERVICE-EVAL-006"],
+    authorization: "awaiting_human_review",
+  },
+] as const;
