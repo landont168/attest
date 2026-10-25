@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as apify from "../apify.js";
 import type * as auth from "../auth.js";
 import type * as cases from "../cases.js";
 import type * as corrections from "../corrections.js";
@@ -21,6 +22,9 @@ import type * as moss from "../moss.js";
 import type * as policies from "../policies.js";
 import type * as retrievalRecords from "../retrievalRecords.js";
 import type * as retrievalValidators from "../retrievalValidators.js";
+import type * as scheduleValidators from "../scheduleValidators.js";
+import type * as scheduleWorkflow from "../scheduleWorkflow.js";
+import type * as schedules from "../schedules.js";
 import type * as team from "../team.js";
 import type * as validators from "../validators.js";
 import type * as workflows from "../workflows.js";
@@ -33,6 +37,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  apify: typeof apify;
   auth: typeof auth;
   cases: typeof cases;
   corrections: typeof corrections;
@@ -46,6 +51,9 @@ declare const fullApi: ApiFromModules<{
   policies: typeof policies;
   retrievalRecords: typeof retrievalRecords;
   retrievalValidators: typeof retrievalValidators;
+  scheduleValidators: typeof scheduleValidators;
+  scheduleWorkflow: typeof scheduleWorkflow;
+  schedules: typeof schedules;
   team: typeof team;
   validators: typeof validators;
   workflows: typeof workflows;

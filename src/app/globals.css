@@ -5562,3 +5562,39 @@ body,
   color: var(--text-primary);
   background: var(--surface);
 }
+
+.schedule-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin: 16px 0;
+}
+.schedule-controls label {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.schedule-controls textarea,
+.schedule-controls select,
+.schedule-controls input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: inherit;
+}
+.schedule-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.source-article.schedule-entry {
+  padding: 16px;
+}
+.source-article.schedule-entry:last-child {
+  border-bottom: 0;
+}

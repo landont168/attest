@@ -47,6 +47,7 @@ import {
   SectionTitle,
   Status,
 } from "./primitives";
+import { EventSchedules } from "./event-schedules";
 import { FinanceTeam } from "./finance-team";
 import {
   HUMAN_ROLES,
@@ -63,6 +64,7 @@ const links = [
   { name: "Work queue", href: "/work", icon: ListTodo },
   { name: "Contracts", href: "/contracts", icon: FileText },
   { name: "Approvals", href: "/approvals", icon: CheckCheck },
+  { name: "Event schedules", href: "/events", icon: FileText },
   { name: "Finance team", href: "/team", icon: Users },
   { name: "Policies", href: "/policies", icon: BookOpen },
   { name: "Audit trail", href: "/audit", icon: ActivityIcon },
@@ -311,6 +313,8 @@ export function AttestApp() {
             <Approvals snapshot={snapshot} />
           ) : current === "Audit trail" ? (
             <AuditPage snapshot={snapshot} />
+          ) : current === "Event schedules" ? (
+            <EventSchedules snapshot={snapshot} notify={notify} />
           ) : current === "Finance team" ? (
             <FinanceTeam snapshot={snapshot} notify={notify} />
           ) : current === "Policies" ? (
@@ -1362,6 +1366,16 @@ function Integrations({
               ? "Configured · see learning results for verification"
               : "Not configured",
             ready: !!providers?.policyLearner,
+          },
+          {
+            name: "Apify",
+            label: "Public event schedules",
+            description:
+              "Collects a limited Warriors event feed from TheSportsDB. Date and venue changes create booking review tasks.",
+            status: providers?.apify
+              ? "Configured · see Event schedules for run status"
+              : "Not configured",
+            ready: !!providers?.apify,
           },
           {
             name: "Moss",

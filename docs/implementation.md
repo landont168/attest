@@ -51,7 +51,8 @@ See [policy learning](policy-learning.md) for rules, data flow, failure recovery
 | CREAO | Configured and live-verified: invoice dispute, missing evidence, vendor resolution, and policy activation | Broader scenario evaluation; see [live verification](live-verification.md) |
 | Cloud Convex | Not deployed | Authorized cloud project when deployment is desired |
 | Moss | Implemented and locally live-verified | Bounded semantic retrieval; see [scope and measured checks](moss-retrieval.md) |
-| Figma / Apify / Bright Data | Not integrated | Not required for the current synthetic finance workflow |
+| Apify | Implemented | Private schedule Actor, immutable observations, booking links and human change reviews; see [implementation and verification](apify-schedules.md) |
+| Figma / Bright Data | Not integrated | Bright Data independent verification remains a separate follow-up |
 | Accounting system / vendor communications | Synthetic records only | Explicit target systems and real authorization before operational use |
 
 The v1 endpoint contract was checked against the [CREAO hackathon API guide](https://community.creao.ai/AI_hackathon_UCLA2026/tech) and [API Trigger documentation](https://docs.creao.ai/pro/api-trigger). Credentialed runs now establish compatibility for the scenarios in [the live verification report](live-verification.md). These focused checks are not an accuracy benchmark.

@@ -24,6 +24,7 @@ export const providers = query({
     creao: v.boolean(),
     hasCompletedRun: v.boolean(),
     policyLearner: v.boolean(),
+    apify: v.boolean(),
     moss: v.boolean(),
     mossLastOutcome: v.union(v.string(), v.null()),
     mode: v.string(),
@@ -48,6 +49,7 @@ export const providers = query({
       policyLearner:
         !!env.CREAO_POLICY_AGENT_ID &&
         !!(env.CREAO_POLICY_API_KEY || env.CREAO_API_KEY),
+      apify: !!env.APIFY_API_TOKEN && !!env.APIFY_ACTOR_ID,
       moss: !!env.MOSS_PROJECT_ID && !!env.MOSS_PROJECT_KEY,
       mossLastOutcome: retrieval?.outcome ?? null,
       mode: (await ctx.db.get(p.sandboxId))!.mode,

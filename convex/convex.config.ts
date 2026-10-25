@@ -7,6 +7,8 @@ const app = defineApp({
     CREAO_AGENT_ID: v.optional(v.string()),
     CREAO_POLICY_AGENT_ID: v.optional(v.string()),
     CREAO_POLICY_API_KEY: v.optional(v.string()),
+    APIFY_API_TOKEN: v.optional(v.string()),
+    APIFY_ACTOR_ID: v.optional(v.string()),
     MOSS_PROJECT_ID: v.optional(v.string()),
     MOSS_PROJECT_KEY: v.optional(v.string()),
   },

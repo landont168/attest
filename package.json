@@ -15,7 +15,10 @@
     "seed:history": "tsx scripts/seed-dataset.ts history",
     "seed:eval": "tsx scripts/seed-dataset.ts evaluation",
     "evaluate:datasets": "tsx scripts/seed-dataset.ts evaluation --evaluate --reset",
-    "evaluate:moss:live": "tsx scripts/evaluate-moss.ts --live"
+    "evaluate:moss:live": "tsx scripts/evaluate-moss.ts --live",
+    "deploy:apify": "node scripts/deploy-apify.mjs --deploy",
+    "test:apify-actor": "node --test integrations/apify-actor/test/*.test.mjs",
+    "evaluate:apify:live": "tsx scripts/evaluate-apify.ts --live"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.96",
