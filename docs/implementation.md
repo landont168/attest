@@ -50,7 +50,7 @@ See [policy learning](policy-learning.md) for rules, data flow, failure recovery
 | Local Convex | Running with auth, persistence, reactive updates, durable jobs | Nothing for local development |
 | CREAO | Configured and live-verified: invoice dispute, missing evidence, vendor resolution, and policy activation | Broader scenario evaluation; see [live verification](live-verification.md) |
 | Cloud Convex | Not deployed | Authorized cloud project when deployment is desired |
-| Moss | Optional, not implemented | Separate retrieval adapter work if selected |
+| Moss | Implemented and locally live-verified | Bounded semantic retrieval; see [scope and measured checks](moss-retrieval.md) |
 | Figma / Apify / Bright Data | Not integrated | Not required for the current synthetic finance workflow |
 | Accounting system / vendor communications | Synthetic records only | Explicit target systems and real authorization before operational use |
 

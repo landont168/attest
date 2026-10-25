@@ -21,6 +21,50 @@ export const investigate = workflow.define({
             `${kind} specialist failed or returned a stale result.`,
           );
       }
+      const agentContext: typeof context & { evidenceSearch?: unknown } =
+        context;
+      if (!context.runId) {
+        const retrievalId = await step.runMutation(
+          internal.retrievalRecords.prepare,
+          {
+            target: {
+              kind: "case",
+              caseId: args.caseId,
+              attempt: context.attempt,
+              revision: context.revision,
+            },
+          },
+        );
+        try {
+          await step.runAction(
+            internal.moss.search,
+            { id: retrievalId },
+            { retry: false },
+          );
+        } catch {
+          await step.runMutation(internal.retrievalRecords.finish, {
+            id: retrievalId,
+            outcome: "unavailable",
+            hits: [],
+            error:
+              "Retrieval runtime unavailable; continuing with structured Convex evidence.",
+          });
+        }
+        const retrieval = await step.runMutation(
+          internal.retrievalRecords.consume,
+          { id: retrievalId },
+        );
+        if (retrieval) {
+          agentContext.evidenceSearch = retrieval.evidenceSearch;
+          if (retrieval.precedentCodes)
+            context.precedents = retrieval.precedentCodes.flatMap(
+              (code: string) =>
+                context.precedents.filter(
+                  (p: { code: string }) => p.code === code,
+                ),
+            );
+        }
+      }
       if (context.mode === "deterministic") {
         await step.runMutation(internal.investigations.complete, {
           caseId: args.caseId,
@@ -33,7 +77,11 @@ export const investigate = workflow.define({
         context.runId ??
         (await step.runAction(
           internal.creao.submit,
-          { caseId: args.caseId, attempt: context.attempt, context },
+          {
+            caseId: args.caseId,
+            attempt: context.attempt,
+            context: agentContext,
+          },
           { retry: false },
         ));
       for (let i = 0; i < 90; i++) {
@@ -72,7 +120,32 @@ export const inferPolicy = workflow.define({
   returns: v.null(),
   handler: async (step, args): Promise<null> => {
     try {
-      const context = await step.runQuery(internal.policies.context, args);
+      let context = await step.runQuery(internal.policies.context, args);
+      if (!context.job.runId && !context.job.submissionStatus) {
+        const retrievalId = await step.runMutation(
+          internal.retrievalRecords.prepare,
+          { target: { kind: "policy", jobId: args.jobId } },
+        );
+        try {
+          await step.runAction(
+            internal.moss.search,
+            { id: retrievalId },
+            { retry: false },
+          );
+        } catch {
+          await step.runMutation(internal.retrievalRecords.finish, {
+            id: retrievalId,
+            outcome: "unavailable",
+            hits: [],
+            error:
+              "Retrieval runtime unavailable; continuing with structured Convex evidence.",
+          });
+        }
+        await step.runMutation(internal.retrievalRecords.consume, {
+          id: retrievalId,
+        });
+        context = await step.runQuery(internal.policies.context, args);
+      }
       if (context.job.mode === "deterministic") {
         await step.runMutation(internal.policies.finish, args);
         return null;

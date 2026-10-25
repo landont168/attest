@@ -52,7 +52,7 @@ The default mode runs the real deterministic finance engine without an AI call. 
 4. In **Integrations**, select **Live CREAO investigation**, then create a new scenario. Existing cases retain their original mode.
 5. Inspect **Agent activity → Provider runs** for the external run ID, actual status, and retained output. Invalid or unsupported output withholds financial approval.
 
-Keys are needed only for live CREAO. Local simulation, financial controls, policy workflows, and tests work without them. Optional Moss credentials are reserved in the local config but are not applied: semantic retrieval is not implemented. Current retrieval uses indexed Convex records. No Anthropic SDK or API is used by this repository.
+Keys are needed only for live CREAO. Local simulation, financial controls, policy workflows, and tests work without them. Moss retrieval is implemented: configure `MOSS_PROJECT_ID` and `MOSS_PROJECT_KEY` to rank eligible historical decisions and signed clauses. Every result is revalidated in Convex; missing or failed Moss falls back to structured lookup. See [Moss retrieval and measured checks](docs/moss-retrieval.md). No Anthropic SDK or API is used by this repository.
 
 ## Verify
 
