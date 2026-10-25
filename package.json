@@ -10,7 +10,11 @@
     "configure:integrations": "node scripts/configure-integrations.mjs",
     "test:learner": "python3 -m unittest discover -s agents/policy-learner -p \"test_*.py\"",
     "evaluate:learning": "tsx scripts/evaluate-learning.ts",
-    "evaluate:learning:live": "tsx scripts/evaluate-learning.ts --live"
+    "evaluate:learning:live": "tsx scripts/evaluate-learning.ts --live",
+    "seed:demo": "tsx scripts/seed-dataset.ts demo",
+    "seed:history": "tsx scripts/seed-dataset.ts history",
+    "seed:eval": "tsx scripts/seed-dataset.ts evaluation",
+    "evaluate:datasets": "tsx scripts/seed-dataset.ts evaluation --evaluate --reset"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.96",

@@ -335,7 +335,10 @@ export function CaseTeamSummary({ detail }: { detail: Detail }) {
   return (
     <div className="case-team-summary">
       <span>
-        <Users size={13} /> Owned by AP Analyst
+        <Users size={13} />{" "}
+        {detail.case.ownerActorId?.startsWith("synthetic-history:")
+          ? "Synthetic historical AP record"
+          : "Owned by AP Analyst"}
       </span>
       {tasks.map((t) => (
         <span key={t._id}>
@@ -365,8 +368,9 @@ export function CaseTeamWork({
     <div className="case-team-work">
       <h2>Assignments & findings</h2>
       <p className="muted small">
-        AP Analyst owns this case. Specialist results are persisted
-        deterministic executions, not independently running chat agents.
+        {detail.case.ownerActorId?.startsWith("synthetic-history:")
+          ? "Imported synthetic historical decisions. No new agent execution is claimed."
+          : "AP Analyst owns this case. Specialist results are persisted deterministic executions, not independently running chat agents."}
       </p>
       {tasks.length ? (
         tasks.map((t) => (

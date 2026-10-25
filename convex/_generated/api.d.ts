@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as cases from "../cases.js";
 import type * as corrections from "../corrections.js";
 import type * as creao from "../creao.js";
+import type * as datasets from "../datasets.js";
 import type * as http from "../http.js";
 import type * as investigations from "../investigations.js";
 import type * as learningRecords from "../learningRecords.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   cases: typeof cases;
   corrections: typeof corrections;
   creao: typeof creao;
+  datasets: typeof datasets;
   http: typeof http;
   investigations: typeof investigations;
   learningRecords: typeof learningRecords;

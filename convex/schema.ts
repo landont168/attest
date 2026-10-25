@@ -23,11 +23,14 @@ export default defineSchema({
     owner: v.string(),
     generation: v.number(),
     teamVersion: v.optional(v.number()),
+    dataset: v.optional(
+      v.union(v.literal("demo"), v.literal("history"), v.literal("evaluation")),
+    ),
     routineApprovalLimitCents: v.optional(v.number()),
     mode,
     archived: v.boolean(),
     createdAt: v.number(),
-  }),
+  }).index("by_owner_and_dataset", ["owner", "dataset"]),
   cases: defineTable({
     sandboxId: v.id("sandboxes"),
     input: invoiceInput,

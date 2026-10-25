@@ -76,6 +76,7 @@ export function AttestApp() {
     Snapshot | null | undefined;
   const setRole = useMutation(api.workspace.setRole);
   const reset = useMutation(api.workspace.reset);
+  const selectDataset = useMutation(api.datasets.select);
   const [mobile, setMobile] = useState(false);
   const [scenario, setScenario] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -234,7 +235,34 @@ export function AttestApp() {
         </header>
         <div className="environment-strip">
           <span className="environment-details">
-            February 2027 <span className="strip-divider">/</span> Team travel
+            <label htmlFor="dataset">Dataset </label>
+            <select
+              id="dataset"
+              value={snapshot.sandbox.dataset ?? "legacy"}
+              onChange={(e) =>
+                void selectDataset({
+                  dataset: e.target.value as "demo" | "history" | "evaluation",
+                })
+                  .then((r) => {
+                    notify(r.message, r.ok);
+                    if (r.ok) router.push("/work");
+                  })
+                  .catch((e) => notify(e.message, false))
+              }
+            >
+              {!snapshot.sandbox.dataset && (
+                <option value="legacy" disabled>
+                  Original workspace
+                </option>
+              )}
+              <option value="demo">Demo</option>
+              <option value="history">Company History</option>
+              <option value="evaluation">Evaluation</option>
+            </select>
+            <span className="strip-divider">/</span>
+            {snapshot.sandbox.dataset === "history"
+              ? "Synthetic history · May–Sep 2026"
+              : "Synthetic future scenarios · Jan–Feb 2027"}
           </span>
           <span className="role-switch">
             <label htmlFor="role">Acting as</label>
@@ -826,7 +854,11 @@ function Contracts({ snapshot }: { snapshot: Snapshot }) {
                 <tr key={c._id}>
                   <td>
                     <strong>{c.input.contractId}</strong>
-                    <small className="cell-sub">Team accommodation</small>
+                    <small className="cell-sub">
+                      {c.input.unit === "room-night"
+                        ? "Team accommodation"
+                        : "Team transportation"}
+                    </small>
                   </td>
                   <td>{c.input.vendor}</td>
                   <td>{shortDate(c.input.start)}</td>

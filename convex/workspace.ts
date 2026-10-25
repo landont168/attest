@@ -1,3 +1,4 @@
+import { selectDataset } from "./datasets";
 import { ensureOrganization, seedPaymentRecords } from "./team";
 import { financeTeamScenarios } from "../src/lib/simulation/finance-team";
 import { mutation, query } from "./_generated/server";
@@ -24,6 +25,8 @@ export const initialize = mutation({
       )
       .unique();
     if (existing) {
+      if ((await ctx.db.get(existing.sandboxId))?.dataset)
+        return existing.sandboxId;
       // Update the seeded demo location without resetting financial history.
       const cases = await ctx.db
         .query("cases")
@@ -319,6 +322,7 @@ export const reset = mutation({
     const denied = await denyWorkspaceAction(ctx, p, "configure");
     if (denied) return denied;
     const old = (await ctx.db.get(p.sandboxId))!;
+    if (old.dataset) return selectDataset(ctx, old.dataset, true);
     await ctx.db.patch(old._id, { archived: true });
     const sandboxId = await ctx.db.insert("sandboxes", {
       owner: p.identity,

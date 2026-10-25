@@ -459,8 +459,8 @@ export function Investigation({
           <div>
             <strong>Confirmed services</strong>
             <span>
-              {input.service.quantity} room-nights · {shortDate(input.start)} –{" "}
-              {shortDate(input.end)}
+              {input.service.quantity} {input.unit}s · {shortDate(input.start)}{" "}
+              – {shortDate(input.end)}
             </span>
           </div>
           <button
@@ -499,7 +499,7 @@ export function Investigation({
                       </td>
                       <td className="numeric">
                         {cohort.quantity}
-                        <small>room-nights</small>
+                        <small>{input.unit}s</small>
                       </td>
                       <td className="numeric">
                         <button
@@ -1219,7 +1219,7 @@ export function Investigation({
           </label>
           {dialog === "answer" && evidence === "service_confirmation" && (
             <label className="form-label">
-              Delivered room-nights
+              Delivered {input.unit}s
               <input
                 type="number"
                 min="1"

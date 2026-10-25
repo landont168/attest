@@ -38,6 +38,10 @@ The canonical finance-team example, **INV-TEAM-001**, calculates 50 × $300 + 20
 
 The original $750 example remains available for compatibility. See [Finance team implementation](docs/finance-team.md) for the role/permission matrix, organization diagram, schema migration, execution model, demo walkthrough and limits.
 
+## Synthetic datasets
+
+Use the Dataset selector for three isolated environments: **Demo (3 cases)**, **Company History (8 cases)**, and **Evaluation (6 cases)**. Local commands: `npm run seed:demo`, `npm run seed:history`, `npm run seed:eval`, and `npm run evaluate:datasets`. See [dataset commands, inventory and measured evaluation results](docs/datasets.md).
+
 ## Connect CREAO
 
 The default mode runs the real deterministic finance engine without an AI call. It is explicitly labeled as simulation. Live CREAO invoice investigation, missing-evidence escalation, and policy proposal/activation have been verified against the configured saved agent.
