@@ -30,6 +30,7 @@ For a fresh installation, use your existing Convex development project if signed
 - Persisted authorization denials, policy references, approvals, source revisions, and provider runs.
 - Scoped policy proposals from historical precedents, controller activation, safety backtests, correction-driven policy improvement, and retained versions.
 - Finance team directory and acting-role inbox, persisted contract/payment specialist handoffs, assigned Travel Operations requests, and draft-only disputes.
+- Apify public event ingestion with source revisions, explicit synthetic booking links, operational change reviews and retained provider-run references.
 - Configurable AP Manager authorization limits, stable fictional staff identities, verified deposit allocation, and controller-approved corrected payables.
 - Contracts, approvals, overview, audit, evaluation, and integration screens.
 - Anonymous authentication with isolated sandboxes. Reset archives the old sandbox and starts a new one.
@@ -56,9 +57,13 @@ Keys are needed only for live CREAO. Local simulation, financial controls, polic
 
 ## Verify
 
+For public event collection, see [Apify schedules](docs/apify-schedules.md) and the [private Actor setup bundle](integrations/apify-actor/README.md). Configure `APIFY_API_TOKEN` and the saved `APIFY_ACTOR_ID`, then use **Event schedules**. Public events support booking review without changing financial evidence or approvals.
+
 ```sh
 npm run typecheck
 npm run test:report
+npm run test:apify-actor
+npm run test:learner
 npm run build
 ```
 

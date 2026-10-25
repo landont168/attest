@@ -1,0 +1,10 @@
+{
+  "actorSpecification": 1,
+  "name": "attest-event-schedule",
+  "title": "Attest Public Event Schedule",
+  "description": "Collects a bounded Warriors event feed and tracked schedule revisions from TheSportsDB for human operational review.",
+  "version": "0.1",
+  "buildTag": "latest",
+  "dockerfile": "../Dockerfile",
+  "input": "./input_schema.json"
+}

@@ -38,6 +38,7 @@ import {
   authorizeFinance,
   DEFAULT_APPROVAL_LIMIT,
 } from "@/lib/finance/organization";
+import { EventSchedules } from "./event-schedules";
 import { RetrievalEvidence } from "./retrieval-evidence";
 import { VendorLogo } from "./vendor-logo";
 export function Investigation({
@@ -859,6 +860,7 @@ export function Investigation({
       <div className="case-tabs">
         {[
           { id: "reconciliation", label: "Reconciliation", icon: LayersIcon },
+          { id: "schedule", label: "Event schedule", icon: FileText },
           { id: "team", label: "Team handoffs", icon: LayersIcon },
           { id: "evidence", label: "Evidence", icon: FileText },
           { id: "activity", label: "Agent activity", icon: Sparkles },
@@ -876,7 +878,9 @@ export function Investigation({
           </button>
         ))}
       </div>
-      {tab === "team" ? (
+      {tab === "schedule" ? (
+        <EventSchedules snapshot={snapshot} notify={notify} caseId={id} />
+      ) : tab === "team" ? (
         <CaseTeamWork
           detail={data}
           role={snapshot.profile.role}

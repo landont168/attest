@@ -20,6 +20,9 @@ const names = [
   ...["CREAO_POLICY_AGENT_ID", "CREAO_POLICY_API_KEY"].filter((name) =>
     credentials[name]?.trim(),
   ),
+  ...["APIFY_API_TOKEN", "APIFY_ACTOR_ID"].filter((name) =>
+    credentials[name]?.trim(),
+  ),
   ...["MOSS_PROJECT_ID", "MOSS_PROJECT_KEY"].filter((name) =>
     credentials[name]?.trim(),
   ),
@@ -30,6 +33,19 @@ if (
 )
   throw new Error(
     "Fill both MOSS_PROJECT_ID and MOSS_PROJECT_KEY, or leave both empty.",
+  );
+if (
+  !!credentials.APIFY_API_TOKEN?.trim() !== !!credentials.APIFY_ACTOR_ID?.trim()
+)
+  throw new Error(
+    "Fill APIFY_API_TOKEN and run npm run deploy:apify to create the saved Actor ID, or leave both empty.",
+  );
+if (
+  credentials.APIFY_ACTOR_ID?.trim() &&
+  !/^[a-zA-Z0-9]{1,50}$/.test(credentials.APIFY_ACTOR_ID.trim())
+)
+  throw new Error(
+    "APIFY_ACTOR_ID must be the opaque saved Actor ID, not its URL or name.",
   );
 const missing = requiredNames.filter((name) => !credentials[name]?.trim());
 if (missing.length) {
@@ -66,4 +82,9 @@ console.log(
 if (credentials.MOSS_PROJECT_ID?.trim() && credentials.MOSS_PROJECT_KEY?.trim())
   console.log(
     "Moss configured. New investigations and learning jobs will record retrieval outcomes. Run npm run evaluate:moss:live to verify.",
+  );
+
+if (credentials.APIFY_ACTOR_ID?.trim())
+  console.log(
+    "Apify configured. Open Event schedules or run npm run evaluate:apify:live to verify the saved Actor.",
   );

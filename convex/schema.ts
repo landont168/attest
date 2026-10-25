@@ -1,3 +1,9 @@
+import {
+  eventData,
+  tripSnapshot,
+  change,
+  syncStatus,
+} from "./scheduleValidators";
 import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
@@ -356,6 +362,79 @@ export default defineSchema({
     .index("by_caseId_and_attempt", ["caseId", "attempt"])
     .index("by_jobId", ["jobId"])
     .index("by_sandboxId", ["sandboxId"]),
+  scheduleSyncs: defineTable({
+    sandboxId: v.id("sandboxes"),
+    requestedBy: v.string(),
+    actorId: v.string(),
+    requestedAt: v.number(),
+    status: syncStatus,
+    trackedEventIds: v.array(v.string()),
+    workflowId: v.optional(v.string()),
+    runId: v.optional(v.string()),
+    buildId: v.optional(v.string()),
+    datasetId: v.optional(v.string()),
+    error: v.optional(v.string()),
+    terminalFailure: v.optional(v.boolean()),
+    completedAt: v.optional(v.number()),
+    observedAt: v.optional(v.string()),
+    imported: v.optional(v.number()),
+    changed: v.optional(v.number()),
+    stale: v.optional(v.number()),
+    missingTrackedIds: v.optional(v.array(v.string())),
+  }).index("by_sandboxId", ["sandboxId"]),
+  scheduleEvents: defineTable({
+    sandboxId: v.id("sandboxes"),
+    externalId: v.string(),
+    currentRevisionId: v.optional(v.id("scheduleRevisions")),
+    version: v.number(),
+    lastObservedAt: v.string(),
+    lastSyncId: v.id("scheduleSyncs"),
+  })
+    .index("by_sandboxId_and_externalId", ["sandboxId", "externalId"])
+    .index("by_sandboxId", ["sandboxId"]),
+  scheduleRevisions: defineTable({
+    sandboxId: v.id("sandboxes"),
+    eventId: v.id("scheduleEvents"),
+    syncId: v.id("scheduleSyncs"),
+    version: v.number(),
+    data: eventData,
+    rawJson: v.string(),
+    observedAt: v.string(),
+    recordedAt: v.number(),
+  }).index("by_eventId", ["eventId"]),
+  scheduleLinks: defineTable({
+    sandboxId: v.id("sandboxes"),
+    eventId: v.id("scheduleEvents"),
+    caseId: v.id("cases"),
+    baselineRevisionId: v.id("scheduleRevisions"),
+    trip: tripSnapshot,
+    reason: v.string(),
+    linkedBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_eventId_and_caseId", ["eventId", "caseId"])
+    .index("by_eventId", ["eventId"])
+    .index("by_caseId", ["caseId"])
+    .index("by_sandboxId", ["sandboxId"]),
+  scheduleReviews: defineTable({
+    sandboxId: v.id("sandboxes"),
+    caseId: v.id("cases"),
+    eventId: v.id("scheduleEvents"),
+    linkId: v.id("scheduleLinks"),
+    fromRevisionId: v.optional(v.id("scheduleRevisions")),
+    toRevisionId: v.id("scheduleRevisions"),
+    trip: tripSnapshot,
+    changes: v.array(change),
+    reason: v.string(),
+    status: v.union(v.literal("open"), v.literal("reviewed")),
+    createdAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.string()),
+    resolution: v.optional(v.string()),
+  })
+    .index("by_sandboxId_and_status", ["sandboxId", "status"])
+    .index("by_caseId", ["caseId"])
+    .index("by_eventId", ["eventId"]),
   periods: defineTable({
     sandboxId: v.id("sandboxes"),
     month: v.string(),

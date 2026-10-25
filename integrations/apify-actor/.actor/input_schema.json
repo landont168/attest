@@ -1,0 +1,39 @@
+{
+  "title": "Attest event schedule input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "schemaVersion": {
+      "title": "Contract version",
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 1,
+      "description": "Version of the Attest input contract; must be 1.",
+      "editor": "number"
+    },
+    "trackedEventIds": {
+      "title": "Existing TheSportsDB event IDs to refresh",
+      "type": "array",
+      "editor": "stringList",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "maxItems": 10,
+      "description": "Up to ten previously linked TheSportsDB event IDs to refresh."
+    },
+    "requestKey": {
+      "title": "Attest request key",
+      "type": "string",
+      "editor": "textfield",
+      "default": "manual-smoke",
+      "description": "Stable Attest sync request identifier used to reconcile provider runs."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "requestKey"
+  ],
+  "additionalProperties": false
+}

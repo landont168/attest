@@ -30,6 +30,8 @@ import type { DataModel } from "./dataModel.js";
 type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
+  readonly APIFY_ACTOR_ID: string | undefined;
+  readonly APIFY_API_TOKEN: string | undefined;
   readonly CREAO_AGENT_ID: string | undefined;
   readonly CREAO_API_KEY: string | undefined;
   readonly CREAO_POLICY_AGENT_ID: string | undefined;
