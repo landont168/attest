@@ -1,3 +1,4 @@
+import { authorizeFinance } from "./organization";
 import {
   inputSchema,
   interpretationSchema,
@@ -226,30 +227,10 @@ export function permission(
   proposer: string,
   requiresController: boolean,
 ) {
-  if (actor === proposer)
-    return {
-      ok: false,
-      reason:
-        "The proposing actor cannot approve or execute its own financial action.",
-    };
-  const ok =
-    action === "post"
-      ? role === "posting_gateway"
-      : action === "policy" || action === "correct" || requiresController
-        ? role === "human_controller"
-        : role === "human_accountant" || role === "human_controller";
-  return {
-    ok,
-    reason: ok
-      ? "Authorized."
-      : "This action requires an authorized " +
-        (action === "post"
-          ? "posting gateway."
-          : "human " +
-            (requiresController || action === "policy" || action === "correct"
-              ? "controller."
-              : "reviewer.")),
-  };
+  return authorizeFinance({ id: actor, role }, action, {
+    proposer,
+    requiresController,
+  });
 }
 export function validateJournal(lines: JournalLine[]) {
   if (
@@ -268,17 +249,29 @@ export function validateJournal(lines: JournalLine[]) {
     throw new Error("Journal debits and credits must balance.");
   return debits;
 }
-export function payableJournal(amount: number): JournalLine[] {
+export function payableJournal(amount: number, deposit = 0): JournalLine[] {
   if (!Number.isSafeInteger(amount) || amount <= 0)
     throw new Error("Posting requires a positive amount in cents.");
+  if (!Number.isSafeInteger(deposit) || deposit < 0 || deposit > amount)
+    throw new Error("Invalid prepaid deposit allocation.");
   const lines = [
     {
       account: "6100 · Team travel expense",
       debitCents: amount,
       creditCents: 0,
     },
-    { account: "2100 · Accounts payable", debitCents: 0, creditCents: amount },
-  ];
+    {
+      account: "2100 · Accounts payable",
+      debitCents: 0,
+      creditCents: amount - deposit,
+    },
+  ].filter((line) => line.debitCents > 0 || line.creditCents > 0);
+  if (deposit)
+    lines.push({
+      account: "1480 · Prepaid travel deposits",
+      debitCents: 0,
+      creditCents: deposit,
+    });
   validateJournal(lines);
   return lines;
 }

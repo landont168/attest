@@ -8,6 +8,8 @@ export const sourceSchema = z.object({
     "invoice",
     "communication",
     "resolution",
+    "payment",
+    "credit",
   ]),
   title: z.string(),
   date: z.string(),
@@ -58,6 +60,14 @@ export const inputSchema = z.object({
     confirmed: z.boolean(),
   }),
   sources: z.array(sourceSchema).max(50),
+  deposit: z.optional(
+    z.object({
+      transactionId: z.string(),
+      amountCents: z.number().int().positive(),
+      bankSourceId: z.string(),
+      creditSourceId: z.string(),
+    }),
+  ),
 });
 export type InvoiceInput = z.infer<typeof inputSchema>;
 export type Source = z.infer<typeof sourceSchema>;
@@ -79,6 +89,9 @@ export type Result = {
   evidenceIds: string[];
   explanation: string;
   issues: string[];
+  depositCents?: number;
+  invoiceOutstandingCents?: number | null;
+  remainingDueCents?: number | null;
 };
 export type State =
   | "NEW"
@@ -93,6 +106,12 @@ export type State =
 export type Role =
   | "human_accountant"
   | "human_controller"
+  | "travel_coordinator"
+  | "vendor_manager"
+  | "internal_auditor"
+  | "contract_finance"
+  | "payment_reconciliation"
+  | "vendor_dispute"
   | "ai_agent"
   | "posting_gateway"
   | "sync_job";

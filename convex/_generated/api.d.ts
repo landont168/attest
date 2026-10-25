@@ -17,6 +17,7 @@ import type * as investigations from "../investigations.js";
 import type * as learningRecords from "../learningRecords.js";
 import type * as lib from "../lib.js";
 import type * as policies from "../policies.js";
+import type * as team from "../team.js";
 import type * as validators from "../validators.js";
 import type * as workflows from "../workflows.js";
 import type * as workspace from "../workspace.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   learningRecords: typeof learningRecords;
   lib: typeof lib;
   policies: typeof policies;
+  team: typeof team;
   validators: typeof validators;
   workflows: typeof workflows;
   workspace: typeof workspace;

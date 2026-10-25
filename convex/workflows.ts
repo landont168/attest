@@ -9,6 +9,18 @@ export const investigate = workflow.define({
     const context = await step.runMutation(internal.investigations.begin, args);
     if (!context) return null;
     try {
+      for (const kind of ["contract", "payment"] as const) {
+        const ok = await step.runMutation(internal.team.runSpecialist, {
+          caseId: args.caseId,
+          attempt: context.attempt,
+          revision: context.revision,
+          kind,
+        });
+        if (!ok)
+          throw new Error(
+            `${kind} specialist failed or returned a stale result.`,
+          );
+      }
       if (context.mode === "deterministic") {
         await step.runMutation(internal.investigations.complete, {
           caseId: args.caseId,

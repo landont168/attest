@@ -3,10 +3,16 @@ export const mode = v.union(v.literal("deterministic"), v.literal("creao"));
 export const humanRole = v.union(
   v.literal("human_accountant"),
   v.literal("human_controller"),
+  v.literal("travel_coordinator"),
+  v.literal("vendor_manager"),
+  v.literal("internal_auditor"),
 );
 export const role = v.union(
   humanRole,
   v.literal("ai_agent"),
+  v.literal("contract_finance"),
+  v.literal("payment_reconciliation"),
+  v.literal("vendor_dispute"),
   v.literal("posting_gateway"),
   v.literal("sync_job"),
 );
@@ -36,6 +42,8 @@ export const source = v.object({
         "invoice",
         "communication",
         "resolution",
+        "payment",
+        "credit",
       ] as const
     ).map((s) => v.literal(s)),
   ),
@@ -89,6 +97,14 @@ export const invoiceInput = v.object({
     confirmed: v.boolean(),
   }),
   sources: v.array(source),
+  deposit: v.optional(
+    v.object({
+      transactionId: v.string(),
+      amountCents: v.number(),
+      bankSourceId: v.string(),
+      creditSourceId: v.string(),
+    }),
+  ),
 });
 export const cohort = v.object({
   termId: v.string(),
@@ -111,6 +127,9 @@ export const result = v.object({
   evidenceIds: v.array(v.string()),
   explanation: v.string(),
   issues: v.array(v.string()),
+  depositCents: v.optional(v.number()),
+  invoiceOutstandingCents: v.optional(v.union(v.number(), v.null())),
+  remainingDueCents: v.optional(v.union(v.number(), v.null())),
 });
 export const line = v.object({
   account: v.string(),

@@ -29,10 +29,14 @@ For a fresh installation, use your existing Convex development project if signed
 - Server-side posting gateway with current-proposal approval checks, open-period checks, deduplication, balanced journal entries, and linked reversals preserving the original.
 - Persisted authorization denials, policy references, approvals, source revisions, and provider runs.
 - Scoped policy proposals from historical precedents, controller activation, safety backtests, correction-driven policy improvement, and retained versions.
+- Finance team directory and acting-role inbox, persisted contract/payment specialist handoffs, assigned Travel Operations requests, and draft-only disputes.
+- Configurable AP Manager authorization limits, stable fictional staff identities, verified deposit allocation, and controller-approved corrected payables.
 - Contracts, approvals, overview, audit, evaluation, and integration screens.
 - Anonymous authentication with isolated sandboxes. Reset archives the old sandbox and starts a new one.
 
-The main example calculates 30 × $240 + 20 × $265 = **$12,500**, against a **$13,250** invoice. The $750 difference is a proposed discrepancy. Dispute approval alone never posts a lower payable. Vendor resolution plus a new controller approval authorizes a balanced $12,500 expense/payable journal.
+The canonical finance-team example, **INV-TEAM-001**, calculates 50 × $300 + 20 × $250 = **$20,000**, against a **$21,000** invoice. The independently verified **$3,000** deposit reduces the supported remaining due to **$17,000**. Dispute approval alone never posts a lower payable. A referenced vendor response creates a revised proposal requiring fresh controller approval. The gateway posts expense, remaining AP and prepaid deposit allocation exactly once.
+
+The original $750 example remains available for compatibility. See [Finance team implementation](docs/finance-team.md) for the role/permission matrix, organization diagram, schema migration, execution model, demo walkthrough and limits.
 
 ## Connect CREAO
 

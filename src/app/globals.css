@@ -5313,3 +5313,234 @@ body,
   height: 16%;
   background: var(--brand-accent);
 }
+
+/* Finance organization and persisted specialist work. */
+.finance-org-chart {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 0;
+  border-block: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.finance-org-chart > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.finance-org-chart strong {
+  color: var(--brand-primary);
+  font-size: 14px;
+}
+.finance-chart-specialists span {
+  font-weight: 550;
+}
+.finance-org-chart small {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.team-inbox {
+  margin-bottom: 30px;
+}
+.team-inbox h2 {
+  margin-bottom: 12px;
+}
+.team-inbox-row,
+.team-case-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.team-inbox-row > span:nth-child(2) {
+  flex: 1;
+}
+.team-inbox-row strong,
+.team-inbox-row small {
+  display: block;
+}
+.team-inbox-row small {
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.finance-team-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.employee-list {
+  border-right: 1px solid var(--border);
+  padding-right: 20px;
+}
+.employee-list button {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+.employee-list button span,
+.employee-list button small {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.employee-list button.employee-selected {
+  background: #e7edf9;
+  color: var(--brand-primary);
+}
+.employee-list > p {
+  margin-top: 20px;
+}
+.employee-detail h3 {
+  margin: 20px 0 8px;
+  font-size: 13px;
+}
+.employee-detail p,
+.employee-detail li {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.employee-detail ul {
+  padding-left: 18px;
+  margin: 8px 0;
+}
+.employee-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.team-case-row small {
+  display: block;
+  margin-top: 3px;
+}
+.team-recent {
+  margin: 10px 0;
+}
+.team-recent time {
+  color: var(--text-secondary);
+}
+.team-approval-settings {
+  border-top: 1px solid var(--border);
+  margin-top: 30px;
+  padding-top: 22px;
+}
+.team-approval-settings label {
+  display: block;
+  font-size: 12px;
+  margin: 16px 0;
+  max-width: 240px;
+}
+.team-approval-settings input {
+  margin-top: 6px;
+}
+.case-team-summary {
+  display: flex;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  border-block: 1px solid var(--border);
+  padding: 10px 0;
+  margin-top: 18px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.case-team-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.case-team-summary span:first-child {
+  color: var(--brand-primary);
+}
+.case-team-summary b {
+  font-weight: 500;
+}
+.case-team-work {
+  max-width: 1100px;
+}
+.case-team-work > h2 {
+  margin: 24px 0 10px;
+}
+.specialist-task {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.specialist-task h3 {
+  font-size: 14px;
+}
+.specialist-task p {
+  margin: 10px 0;
+}
+.specialist-task > .button {
+  margin: 12px 0;
+  display: flex;
+}
+.specialist-task .source-ref {
+  display: inline-flex;
+}
+.dispute-draft {
+  padding: 22px 0;
+}
+.dispute-draft p {
+  margin: 10px 0;
+}
+.dispute-draft summary {
+  cursor: pointer;
+  color: var(--brand-primary);
+  font-size: 12px;
+}
+.settlement-summary {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.settlement-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 12px;
+}
+.settlement-summary small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  display: block;
+  margin-top: 8px;
+}
+@media (max-width: 900px) {
+  .finance-team-layout {
+    grid-template-columns: 1fr;
+  }
+  .employee-list {
+    border-right: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0;
+  }
+  .employee-list > p {
+    grid-column: 1/-1;
+  }
+  .finance-org-chart {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .finance-org-chart > svg {
+    display: none;
+  }
+  .finance-org-chart > div {
+    min-width: 180px;
+  }
+}
