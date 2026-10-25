@@ -244,7 +244,6 @@ export function Investigation({
                 Record vendor resolution
                 <ArrowRight size={14} />
               </Button>
-              <small className="muted">Simulated controller action</small>
             </>
           )}
           {["NEEDS_INFO", "REJECTED", "FAILED_RETRYABLE"].includes(c.state) && (
@@ -320,7 +319,7 @@ export function Investigation({
             <small>
               {c.mode === "creao"
                 ? `CREAO · ${c.providerStatus ?? "queued"}`
-                : "Deterministic simulation · no AI run"}
+                : "Rules-based engine"}
             </small>
           </div>
         </div>
@@ -610,7 +609,7 @@ export function Investigation({
       </Panel>
       {data.journals.length > 0 && (
         <Panel
-          title="Simulated ledger"
+          title="Ledger"
           meta={<span className="status status-green">Balanced</span>}
         >
           {data.journals.map((j) => (
@@ -712,7 +711,7 @@ export function Investigation({
         <span className="case-mode">
           {c.mode === "creao"
             ? "CREAO investigation"
-            : "Deterministic simulation"}
+            : "Rules-based investigation"}
         </span>
       </div>
       <div className="case-metrics">
@@ -809,9 +808,7 @@ export function Investigation({
                   <p>{s.text}</p>
                   <small>
                     {s.clause} ·{" "}
-                    {s.signed
-                      ? "Signed / confirmed synthetic record"
-                      : "Source record"}
+                    {s.signed ? "Signed / confirmed record" : "Source record"}
                   </small>
                 </article>
               ))}
@@ -1033,7 +1030,7 @@ export function Investigation({
               <div className="document-paper">
                 <div className="document-letterhead">
                   {input.vendor}
-                  <span>SYNTHETIC DOCUMENT</span>
+                  <span>Source document</span>
                 </div>
                 <h3>{source.title}</h3>
                 <div className="highlighted-clause">
@@ -1042,10 +1039,6 @@ export function Investigation({
                 </div>
                 <small>Source ID: {source.id}</small>
               </div>
-              <Notice>
-                This is a synthetic business record. The cited clause, source
-                identifier, and version are retained with the investigation.
-              </Notice>
             </>
           )}
         </div>

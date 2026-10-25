@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import {
   Activity as ActivityIcon,
-  ArrowDown,
   ArrowRight,
   ArrowUpRight,
   Bell,
@@ -17,7 +17,6 @@ import {
   CircleHelp,
   FileText,
   FlaskConical,
-  Layers3,
   LayoutDashboard,
   ListFilter,
   ListTodo,
@@ -27,7 +26,6 @@ import {
   Search,
   Settings2,
   ShieldCheck,
-  Sparkles,
   Unplug,
   X,
 } from "lucide-react";
@@ -130,9 +128,14 @@ export function AttestApp() {
           </span>
         </Link>
         <div className="org-selector">
-          <div className="org-mark">
-            GS<span>W</span>
-          </div>
+          <Image
+            className="org-logo"
+            src="/warriors.svg"
+            alt="Golden State Warriors"
+            width={38}
+            height={38}
+            unoptimized
+          />
           <div>
             <strong>Golden State Warriors</strong>
             <span>Finance Operations</span>
@@ -171,16 +174,23 @@ export function AttestApp() {
             <span className="live-dot" />
             <div>
               <strong>Workspace connected</strong>
-              <small>Synthetic team-travel records</small>
+              <small>Team travel operations</small>
             </div>
           </div>
           <button className="nav-item" onClick={() => setSettings(true)}>
             <Settings2 size={16} />
-            <span>Simulation settings</span>
+            <span>Workspace settings</span>
           </button>
           <div className="sidebar-person">
             <div className="person-avatar">
-              {snapshot.profile.role === "human_controller" ? "FC" : "AP"}
+              <Image
+                className="profile-logo"
+                src="/warriors.svg"
+                alt="Golden State Warriors profile"
+                width={30}
+                height={30}
+                unoptimized
+              />
             </div>
             <div>
               <strong>
@@ -188,7 +198,7 @@ export function AttestApp() {
                   ? "Finance Controller"
                   : "AP Analyst"}
               </strong>
-              <small>Simulated role</small>
+              <small>Finance operations</small>
             </div>
             <ChevronDown size={13} />
           </div>
@@ -222,10 +232,6 @@ export function AttestApp() {
             )}
           </div>
           <div className="topbar-actions">
-            <span className="simulation-label">
-              <FlaskConical size={13} /> Independent simulation · Synthetic
-              financial data
-            </span>
             <button
               className="icon-button"
               aria-label="View items needing attention"
@@ -234,25 +240,21 @@ export function AttestApp() {
               <Bell size={17} />
               {attention > 0 && <span className="notification-dot" />}
             </button>
-            <div className="top-avatar">GS</div>
+            <div className="top-avatar">
+              <Image
+                className="profile-logo"
+                src="/warriors.svg"
+                alt="Golden State Warriors profile"
+                width={26}
+                height={26}
+                unoptimized
+              />
+            </div>
           </div>
         </header>
         <div className="environment-strip">
-          <span className="mobile-simulation-note">
-            Independent simulation · Synthetic financial data
-          </span>
           <span className="environment-details">
-            <span
-              className={cn(
-                "live-dot",
-                snapshot.sandbox.mode === "deterministic" && "amber-dot",
-              )}
-            />
-            {snapshot.sandbox.mode === "deterministic"
-              ? "Deterministic simulation"
-              : "CREAO investigation mode"}
-            <span className="strip-divider">/</span>Synthetic business date ·
-            February 2027
+            February 2027 <span className="strip-divider">/</span> Team travel
           </span>
           <span className="role-switch">
             <label htmlFor="role">Acting as</label>
@@ -283,7 +285,7 @@ export function AttestApp() {
               />
             ) : (
               <Empty title="Case not found">
-                This case is not part of your current simulation.
+                This case is not in your current workspace.
               </Empty>
             )
           ) : current === "Overview" ? (
@@ -307,13 +309,6 @@ export function AttestApp() {
             <Integrations snapshot={snapshot} notify={notify} />
           )}
         </main>
-        <footer className="app-footer">
-          <span>Attest · Every number has a reason.</span>
-          <span>
-            Unofficial simulation. Not affiliated with the Golden State Warriors
-            or NBA.
-          </span>
-        </footer>
       </div>
       <ScenarioDialog
         open={scenario}
@@ -533,7 +528,7 @@ function Table({ cases }: { cases: CaseRow[] }) {
       </table>
       {!cases.length && (
         <Empty title="No work in this view">
-          Try another filter or add a synthetic invoice.
+          Try another filter or add an invoice.
         </Empty>
       )}
     </div>
@@ -580,11 +575,11 @@ function Queue({
       <SectionTitle
         eyebrow="Team travel / Contract finance"
         title="Work queue"
-        description="Contract-backed invoices, investigations, and approvals."
+        description=""
         action={
           <Button onClick={onScenario}>
             <Plus size={16} />
-            New scenario
+            New invoice
           </Button>
         }
       />
@@ -622,59 +617,6 @@ function Queue({
           icon={FileText}
         />
       </div>
-      {(() => {
-        const focus = snapshot.cases.find(
-          (c) =>
-            c.result &&
-            (c.result.differenceCents ?? 0) > 0 &&
-            c.state !== "POSTED",
-        );
-        if (!focus?.result) return null;
-        return (
-          <section
-            className="case-spotlight"
-            aria-label="Investigation in focus"
-          >
-            <div>
-              <div className="spotlight-kicker">
-                <span className="live-dot" /> Investigation in focus
-              </div>
-              <h2>{focus.input.vendor}</h2>
-              <p>Contract terms, service records, and invoice evidence.</p>
-              <p className="mono">
-                {focus.input.code} · {focus.input.destination}
-              </p>
-              <Link className="spotlight-link" href={`/work/${focus._id}`}>
-                Open investigation <ArrowUpRight size={14} />
-              </Link>
-            </div>
-            <Link
-              className="spotlight-proof"
-              href={`/work/${focus._id}?tab=calculation`}
-              aria-label={`Inspect the calculation for ${focus.input.vendor}`}
-            >
-              <div>
-                <small>Vendor invoiced</small>
-                <strong>{money(focus.result.invoiceCents)}</strong>
-              </div>
-              <ArrowRight size={18} />
-              <div>
-                <small>Evidence supports</small>
-                <strong>{money(focus.result.expectedCents)}</strong>
-              </div>
-              <div className="spotlight-difference">
-                <b>
-                  {money(focus.result.differenceCents)} proposed discrepancy
-                </b>
-                <span>
-                  Review the evidence{" "}
-                  <ArrowUpRight size={12} style={{ display: "inline" }} />
-                </span>
-              </div>
-            </Link>
-          </section>
-        );
-      })()}
       <div className="panel queue-panel">
         <div className="queue-tabs">
           {["All work", ...Object.keys(groups)].map((t) => (
@@ -697,7 +639,6 @@ function Queue({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <kbd>⌕</kbd>
           </label>
           <div className="toolbar-right">
             <select
@@ -731,27 +672,6 @@ function Queue({
           <span>All amounts in USD · Source-backed calculations</span>
         </div>
       </div>
-      <div className="queue-bottom">
-        <div className="insight-note">
-          <div className="insight-symbol">
-            <Sparkles size={18} />
-          </div>
-          <div>
-            <strong>
-              Agreements change. Original commitments don’t disappear.
-            </strong>
-            <p>
-              Attest checks the full contract history before applying a later
-              rate.
-            </p>
-          </div>
-          <Link
-            href={`/work/${snapshot.cases.find((c) => c.input.code === "INV-HOTEL-001")?._id ?? ""}`}
-          >
-            Inspect the February case <ArrowUpRight size={15} />
-          </Link>
-        </div>
-      </div>
     </>
   );
 }
@@ -771,46 +691,10 @@ function Overview({
         action={
           <Button onClick={onScenario}>
             <Plus size={16} />
-            New scenario
+            New invoice
           </Button>
         }
       />
-      <div className="overview-banner">
-        <div>
-          <span className="eyebrow">
-            Agreements. Operations. Accountability.
-          </span>
-          <h2>
-            Your finance work,
-            <br />
-            with the full picture.
-          </h2>
-          <p>
-            Attest connects contractual commitments to delivered services,
-            <br className="desktop-only" /> then prepares the next authorized
-            action.
-          </p>
-          <Link href="/work">
-            Open work queue <ArrowRight size={16} />
-          </Link>
-        </div>
-        <div className="banner-diagram">
-          <div>
-            <FileText size={22} />
-            <span>What we agreed</span>
-          </div>
-          <span className="diagram-line" />
-          <div>
-            <CheckCheck size={22} />
-            <span>What happened</span>
-          </div>
-          <span className="diagram-line" />
-          <div>
-            <ShieldCheck size={22} />
-            <span>What’s supported</span>
-          </div>
-        </div>
-      </div>
       <div className="metrics-grid">
         <Metric
           label="Active work items"
@@ -824,7 +708,7 @@ function Overview({
             snapshot.cases.filter((c) => c.state === "INVESTIGATING").length
           }
           detail="Live backend state"
-          icon={Sparkles}
+          icon={ActivityIcon}
         />
         <Metric
           label="Matched invoices"
@@ -1110,7 +994,7 @@ function Policies({
         description="A pattern is a proposal. Only an authorized decision makes it policy."
         action={
           <Button disabled={busy} onClick={() => void run(() => propose({}))}>
-            <Sparkles size={15} />
+            <ActivityIcon size={15} />
             Learn from history
           </Button>
         }
@@ -1196,9 +1080,7 @@ function Policies({
                   </div>
                   <h3>{p.title}</h3>
                   <p>{p.explanation}</p>
-                  <small>
-                    {shortDate(p.date)} · Historical synthetic record
-                  </small>
+                  <small>{shortDate(p.date)} · Historical record</small>
                 </article>
               ))}
             </div>
@@ -1289,7 +1171,7 @@ function Evaluation() {
               label="Live CREAO benchmark"
               value="Not run"
               detail="Requires configured provider"
-              icon={Sparkles}
+              icon={ActivityIcon}
             />
           </div>
           <Panel

@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Attest · Finance Operations",
   description:
-    "Every number has a reason. Autonomous contract finance — independent simulation.",
+    "Contract-backed invoice investigations, reconciliation, and approvals.",
 };
 export default function RootLayout({
   children,
