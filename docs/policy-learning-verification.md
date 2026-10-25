@@ -5,7 +5,7 @@
 | Check | Result |
 |---|---|
 | TypeScript type checking | Passed |
-| Complete Vitest suite | 93 / 93 tests across 4 files |
+| Complete Vitest suite after UI rebase | 94 / 94 tests across 4 files |
 | Python agent normalizer | 6 / 6 tests |
 | Next.js production build | Passed |
 | Isolated local-backend end-to-end run | 14 / 14 assertions |
@@ -56,3 +56,7 @@ After the saved Policy Learner is configured, run `npm run configure:integration
 Ship backend, setup bundle, minimal UI integration, tests, and documentation in one PR. Keep it draft until the separate-agent live report is reviewed. No production deployment, policy activation in the user's existing sandbox, or data reset is part of this change. A separate development preview would be useful for shared provider testing, but no cloud environment has been provisioned.
 
 The UI developer should integrate the small additions documented in [policy-learning.md](policy-learning.md#ui-handoff); this PR does not redesign page layouts.
+
+## UI integration rebase
+
+Rebased onto origin/main at 98780cf, including the merged UI redesign. Resolved the Policies-page conflict by preserving the redesigned layout and retaining learner job outcomes, comparison/review controls, and the separate learner integration status. After rebase, type checking, all 94 TypeScript/backend tests, all 6 Python normalizer tests, and the production build passed.
