@@ -5185,11 +5185,11 @@ body,
 }
 .attest-brand-name {
   font-family: var(--font-sans);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -1.5px;
   line-height: 1.2;
-  color: var(--brand-sidebar);
+  color: var(--brand-primary);
 }
 .attest-brand-name .brand-period {
   color: #ffc72c;
@@ -5224,3 +5224,92 @@ body,
   outline-color: var(--brand-accent);
 }
 
+/* Only the active view gets a blue tab surface. */
+.queue-tabs,
+.case-tabs {
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  border-radius: 0;
+  gap: 8px;
+}
+.queue-tabs button,
+.case-tabs button {
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  height: 34px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+.queue-tabs button.selected,
+.case-tabs button.selected {
+  background: var(--brand-primary);
+  color: #fff;
+}
+.queue-tabs button.selected:after,
+.case-tabs button.selected:after {
+  display: none;
+}
+.queue-tabs button > span,
+.case-tabs button > span {
+  background: #e8ebf0;
+  color: var(--text-secondary);
+}
+.queue-tabs button.selected > span,
+.case-tabs button.selected > span {
+  background: #ffffff20;
+  color: #fff;
+}
+.queue-tabs button:focus-visible,
+.case-tabs button:focus-visible {
+  outline-color: var(--brand-primary);
+  outline-offset: 2px;
+}
+:root {
+  --text-discrepancy: #1d428a;
+}
+.queue-live {
+  color: var(--green);
+}
+.vendor-link strong {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 550;
+}
+.vendor-link span {
+  display: block;
+  margin-top: 3px;
+}
+.contract-evidence {
+  font: 500 12px/1.55 var(--font-sans);
+}
+.contract-needs-info {
+  color: var(--amber);
+}
+
+/* Preserve the selected PNG silhouette while using exact shared brand inks. */
+.attest-symbol {
+  position: relative;
+  flex-shrink: 0;
+  background: var(--brand-primary);
+  mask: url("/logos/attest-asymmetric-05.png") center / contain no-repeat;
+  -webkit-mask: url("/logos/attest-asymmetric-05.png") center / contain
+    no-repeat;
+}
+.attest-symbol::after {
+  content: "";
+  position: absolute;
+  left: 44%;
+  top: 53.5%;
+  width: 16%;
+  height: 16%;
+  background: var(--brand-accent);
+}
