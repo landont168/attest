@@ -9,6 +9,7 @@ import {
   result,
   role,
   line,
+  source,
 } from "./validators";
 export default defineSchema({
   ...authTables,
@@ -57,12 +58,15 @@ export default defineSchema({
     attempt: v.number(),
     createdAt: v.number(),
     proposedBy: v.string(),
+    correctionId: v.optional(v.id("corrections")),
     result,
     input: invoiceInput,
     policyId: v.optional(v.id("policies")),
     mode,
     runId: v.optional(v.string()),
-  }).index("by_caseId", ["caseId"]),
+  })
+    .index("by_caseId", ["caseId"])
+    .index("by_policyId", ["policyId"]),
   approvals: defineTable({
     caseId: v.id("cases"),
     proposalId: v.id("proposals"),
@@ -113,9 +117,44 @@ export default defineSchema({
     proposalId: v.optional(v.id("proposals")),
     approvalId: v.optional(v.id("approvals")),
     postingRef: v.optional(v.string()),
+    learningJobId: v.optional(v.id("policyRuns")),
+    correctionId: v.optional(v.id("corrections")),
+    changes: v.optional(
+      v.array(
+        v.object({ field: v.string(), before: v.string(), after: v.string() }),
+      ),
+    ),
   })
     .index("by_sandboxId", ["sandboxId"])
     .index("by_caseId", ["caseId"]),
+  corrections: defineTable({
+    sandboxId: v.id("sandboxes"),
+    caseId: v.id("cases"),
+    code: v.string(),
+    kind: v.literal("overlooked_signed_schedule"),
+    originalProposalId: v.id("proposals"),
+    originalRevision: v.number(),
+    responseRevision: v.number(),
+    policyId: v.optional(v.id("policies")),
+    sourceIds: v.array(v.string()),
+    sources: v.array(source),
+    originalInput: invoiceInput,
+    explanation: v.string(),
+    actor: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_caseId_and_responseRevision", ["caseId", "responseRevision"])
+    .index("by_sandboxId", ["sandboxId"]),
+  evaluations: defineTable({
+    sandboxId: v.id("sandboxes"),
+    jobId: v.id("policyRuns"),
+    policyId: v.id("policies"),
+    suiteVersion: v.string(),
+    reportJson: v.string(),
+    contextJson: v.string(),
+    passed: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_policyId", ["policyId"]),
   precedents: defineTable({
     sandboxId: v.id("sandboxes"),
     code: v.string(),
@@ -124,7 +163,18 @@ export default defineSchema({
     title: v.string(),
     explanation: v.string(),
     active: v.boolean(),
-  }).index("by_sandboxId", ["sandboxId"]),
+    correctionId: v.optional(v.id("corrections")),
+    proposalId: v.optional(v.id("proposals")),
+    approvalId: v.optional(v.id("approvals")),
+    synthetic: v.optional(v.boolean()),
+  })
+    .index("by_sandboxId", ["sandboxId"])
+    .index("by_sandboxId_and_vendor_and_active", [
+      "sandboxId",
+      "vendor",
+      "active",
+    ])
+    .index("by_correctionId", ["correctionId"]),
   policies: defineTable({
     sandboxId: v.id("sandboxes"),
     version: v.number(),
@@ -134,6 +184,7 @@ export default defineSchema({
       v.literal("candidate"),
       v.literal("active"),
       v.literal("superseded"),
+      v.literal("rejected"),
     ),
     procedure: v.union(
       v.literal("controller_confirmation"),
@@ -146,13 +197,27 @@ export default defineSchema({
     approvedAt: v.optional(v.number()),
     checks: v.array(v.object({ name: v.string(), passed: v.boolean() })),
     origin: v.string(),
-  }).index("by_sandboxId", ["sandboxId"]),
+    jobId: v.optional(v.id("policyRuns")),
+    evaluationId: v.optional(v.id("evaluations")),
+    proposedBy: v.optional(v.string()),
+    rejectedBy: v.optional(v.string()),
+    rejectedAt: v.optional(v.number()),
+    rejectionReason: v.optional(v.string()),
+  })
+    .index("by_sandboxId", ["sandboxId"])
+    .index("by_sandboxId_and_vendor_and_status", [
+      "sandboxId",
+      "vendor",
+      "status",
+    ]),
   policyRuns: defineTable({
     sandboxId: v.id("sandboxes"),
     mode,
-    procedure: v.union(
-      v.literal("controller_confirmation"),
-      v.literal("signed_schedule_first"),
+    procedure: v.optional(
+      v.union(
+        v.literal("controller_confirmation"),
+        v.literal("signed_schedule_first"),
+      ),
     ),
     status: v.string(),
     createdAt: v.number(),
@@ -160,7 +225,20 @@ export default defineSchema({
     error: v.optional(v.string()),
     policyId: v.optional(v.id("policies")),
     caseId: v.optional(v.id("cases")),
-  }).index("by_sandboxId", ["sandboxId"]),
+    correctionId: v.optional(v.id("corrections")),
+    contextJson: v.optional(v.string()),
+    outputJson: v.optional(v.string()),
+    raw: v.optional(v.string()),
+    outcome: v.optional(v.string()),
+    submissionStatus: v.optional(v.string()),
+    workflowId: v.optional(v.string()),
+    completedAt: v.optional(v.number()),
+    baselinePolicyId: v.optional(v.id("policies")),
+    retryOf: v.optional(v.id("policyRuns")),
+  })
+    .index("by_sandboxId", ["sandboxId"])
+    .index("by_correctionId", ["correctionId"])
+    .index("by_retryOf", ["retryOf"]),
   periods: defineTable({
     sandboxId: v.id("sandboxes"),
     month: v.string(),

@@ -444,7 +444,23 @@ describe("Investigation recovery and policy correction", () => {
       answer:
         "AMD-HOTEL-001 explicitly preserves original rates and adds 20 rooms.",
       evidence: "note",
+      correction: {
+        kind: "overlooked_signed_schedule",
+        sourceIds: ["AMD-HOTEL-001"],
+      },
     });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    const corrected = await client.query(api.cases.detail, { id });
+    expect(
+      (
+        await client.mutation(api.cases.review, {
+          id,
+          proposalId: corrected.case.proposalId!,
+          operation: "approve",
+          reason: "Accepted correction",
+        })
+      ).ok,
+    ).toBe(true);
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     await client.mutation(api.policies.propose, { caseId: id });
     await t.finishAllScheduledFunctions(vi.runAllTimers);

@@ -29,9 +29,9 @@
 
 ## Policy learning
 
-Historical decisions support a narrowly scoped Meridian block-extension review procedure. The first learned procedure requests controller confirmation. A real answer to a case question can support a proposed improvement: inspect the signed itemized schedule before asking the same question again. Each candidate is tested against correct amounts, missing signatures, vendor scope, and its intended evidence handling. Only a controller can activate a passing candidate. Prior proposals keep the policy version used when they were created.
+The versioned learning loop now captures explicit controller corrections against existing signed schedules, promotes them only after validated proposal approval, and automatically queues a separate Policy Learner. Candidates may abstain; application code checks exact citations, records a seven-scenario comparison, and requires controller approval of the exact passing version. Existing policies and case history remain readable.
 
-The simulation selects from supported procedure types; it does not claim unrestricted machine learning. Live mode asks CREAO to interpret the historical context and return a candidate using the same constrained procedure schema. A policy never changes signed rates or approval permissions.
+See [policy learning](policy-learning.md) for rules, data flow, failure recovery, UI interfaces, and the separate [agent setup bundle](../agents/policy-learner/README.md). The initial live policy result below used the legacy shared agent; it does not verify the new separate learner.
 
 ## Recovery semantics
 
@@ -41,7 +41,7 @@ The simulation selects from supported procedure types; it does not claim unrestr
 - A known terminal provider failure can be retried as a fresh run.
 - A POST timeout without a returned run ID is ambiguous. The app blocks blind resubmission; an operator must inspect the project run history. Operator reconciliation of an unknown external run is currently a backend maintenance operation, not a UI action.
 - Missing credentials fail before a submission is recorded. Definitive HTTP 4xx rejections are recorded separately from uncertain submissions.
-- Policy-job failures are visible in Policies. Policy submissions are not automatically repeated; check an ambiguous provider outcome before requesting another policy investigation.
+- Policy-job failures are visible in Policies. Known unresolved runs can resume polling; uncertain submissions without a run ID block resubmission. Explicit retries of terminal failures create linked jobs preserving previous results.
 
 ## Keys and integration blockers
 

@@ -7,7 +7,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:report": "vitest run --reporter=default --reporter=json --outputFile=.context/test-results.json && node scripts/evaluation-report.mjs",
-    "configure:integrations": "node scripts/configure-integrations.mjs"
+    "configure:integrations": "node scripts/configure-integrations.mjs",
+    "test:learner": "python3 -m unittest discover -s agents/policy-learner -p \"test_*.py\"",
+    "evaluate:learning": "tsx scripts/evaluate-learning.ts",
+    "evaluate:learning:live": "tsx scripts/evaluate-learning.ts --live"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.96",

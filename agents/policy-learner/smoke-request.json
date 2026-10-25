@@ -1,0 +1,14 @@
+{
+  "task": "policy_learning",
+  "context": {
+    "schemaVersion": 1,
+    "vendorId": "VEN-MERIDIAN",
+    "currentPolicy": {
+      "procedure": "controller_confirmation",
+      "version": 1,
+      "description": "Controller confirms ambiguous room-block scope."
+    },
+    "precedents": [],
+    "corrections": []
+  }
+}

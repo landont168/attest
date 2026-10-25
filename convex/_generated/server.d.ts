@@ -32,6 +32,8 @@ type Env = {
   readonly CONVEX_SITE_URL: string;
   readonly CREAO_AGENT_ID: string | undefined;
   readonly CREAO_API_KEY: string | undefined;
+  readonly CREAO_POLICY_AGENT_ID: string | undefined;
+  readonly CREAO_POLICY_API_KEY: string | undefined;
 };
 
 /**

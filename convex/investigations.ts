@@ -15,6 +15,7 @@ export const providers = query({
   returns: v.object({
     creao: v.boolean(),
     hasCompletedRun: v.boolean(),
+    policyLearner: v.boolean(),
     mode: v.string(),
   }),
   handler: async (ctx) => {
@@ -29,6 +30,9 @@ export const providers = query({
           c.mode === "creao" && !!c.runId && c.providerStatus === "completed",
       ),
       creao: !!env.CREAO_API_KEY && !!env.CREAO_AGENT_ID,
+      policyLearner:
+        !!env.CREAO_POLICY_AGENT_ID &&
+        !!(env.CREAO_POLICY_API_KEY || env.CREAO_API_KEY),
       mode: (await ctx.db.get(p.sandboxId))!.mode,
     };
   },
@@ -53,22 +57,36 @@ export const begin = internalMutation({
       );
       return null;
     }
-    const policies = await ctx.db
+    const vendorPolicy = await ctx.db
       .query("policies")
-      .withIndex("by_sandboxId", (q) => q.eq("sandboxId", c.sandboxId))
-      .take(30);
-    const policy = policies
-      .filter(
-        (p) =>
-          p.status === "active" &&
-          (p.vendor === "All vendors" || p.vendor === c.input.vendor),
+      .withIndex("by_sandboxId_and_vendor_and_status", (q) =>
+        q
+          .eq("sandboxId", c.sandboxId)
+          .eq("vendor", c.input.vendor)
+          .eq("status", "active"),
       )
-      .sort((a, b) => b.version - a.version)[0];
+      .unique();
+    const fallbackPolicy = vendorPolicy
+      ? null
+      : await ctx.db
+          .query("policies")
+          .withIndex("by_sandboxId_and_vendor_and_status", (q) =>
+            q
+              .eq("sandboxId", c.sandboxId)
+              .eq("vendor", "All vendors")
+              .eq("status", "active"),
+          )
+          .unique();
+    const policy = c.runId
+      ? c.policyId
+        ? await ctx.db.get(c.policyId)
+        : null
+      : (vendorPolicy ?? fallbackPolicy);
     await transition(ctx, c, "INVESTIGATING", "Retrieving source evidence");
     await ctx.db.patch(c._id, {
       attempt: c.attempt + 1,
       error: undefined,
-      ...(policy ? { policyId: policy._id } : {}),
+      policyId: policy?._id,
     });
     await audit(
       ctx,
@@ -202,7 +220,14 @@ export const complete = internalMutation({
           "The documented vendor correction matches the supported contractual amount. A controller must authorize the corrected payable; the original invoice and discrepancy remain in history.",
       };
     }
+    const correction = await ctx.db
+      .query("corrections")
+      .withIndex("by_caseId_and_responseRevision", (q) =>
+        q.eq("caseId", c._id).eq("responseRevision", c.revision),
+      )
+      .unique();
     const proposalId = await ctx.db.insert("proposals", {
+      ...(correction ? { correctionId: correction._id } : {}),
       caseId: c._id,
       sandboxId: c.sandboxId,
       revision: c.revision,

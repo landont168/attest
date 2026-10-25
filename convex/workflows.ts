@@ -65,16 +65,25 @@ export const inferPolicy = workflow.define({
         await step.runMutation(internal.policies.finish, args);
         return null;
       }
-      const runId = await step.runAction(
-        internal.creao.submitPolicy,
-        { jobId: args.jobId, context },
-        { retry: false },
-      );
+      if (
+        context.job.submissionStatus === "submission_pending" &&
+        !context.job.runId
+      )
+        throw new Error(
+          "Policy submission outcome is unknown; inspect provider history.",
+        );
+      const runId =
+        context.job.runId ??
+        (await step.runAction(
+          internal.creao.submitPolicy,
+          { jobId: args.jobId, context: context.context },
+          { retry: false },
+        ));
       for (let i = 0; i < 90; i++) {
         const result = await step.runAction(
           internal.creao.pollPolicy,
-          { runId },
-          { retry: true },
+          { jobId: args.jobId, runId },
+          { retry: { maxAttempts: 3, initialBackoffMs: 2000, base: 2 } },
         );
         if (result.done) {
           await step.runMutation(internal.policies.finish, {
