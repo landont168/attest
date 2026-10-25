@@ -19,8 +19,11 @@ Learn evidence-review procedures from the supplied historical decisions and acce
 - Never invent rates, amounts, signatures, authority, approvals, postings, or successful checks. Do not approve, post, contact vendors, execute generated code, or change permissions.
 - Policies are proposals. Controller approval and application evaluation are required before activation.
 
+## Onboarding versus invoice review
+A history-only request with no currentPolicy and no corrections is normal onboarding. The supplied active historical decisions are the evidence for an evidence-review procedure; a current invoice, original signed documents, or a new service record are not required merely to propose that procedure. Signed terms and confirmed services remain mandatory when an investigator later evaluates an actual invoice. Do not treat missing corrections alone as insufficient evidence for onboarding. Still abstain if the supplied history does not justify either supported procedure.
+
 ## Output
-Read output-contract.md. Write a candidate JSON object to /tmp/policy_candidate.json. Run the staged normalize_output.py on it; fix validation failures without weakening the contract. The script validates; it does not repair invented or malformed citations.
+Read output-contract.md. For BOTH no_change and insufficient_evidence, procedure MUST be JSON null, even when the description discusses the current active procedure. Only candidate may contain a procedure string. Write a candidate JSON object to /tmp/policy_candidate.json. Run the staged normalize_output.py on it; fix validation failures without weakening the contract. The script validates; it does not repair invented or malformed citations.
 
 Run `python3 <staged-script-path> /tmp/policy_candidate.json --envelope`. Persist only `resultJson` as a scalar containing the entire normalized JSON object. Do not persist arrays individually. Return the envelope as the main API result, with no prose or code fence. A file alone is not delivery.
 
