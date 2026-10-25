@@ -51,6 +51,7 @@ export function Investigation({
   const inject = useMutation(api.workspace.inject);
   const proposePolicy = useMutation(api.policies.propose);
   const [tab, setTab] = useState("reconciliation");
+  const [calculationOpen, setCalculationOpen] = useState(false);
   const [source, setSource] = useState<Source | null>(null);
   const [dialog, setDialog] = useState<
     "approve" | "reject" | "ask" | "resolve" | "answer" | "reverse" | null
@@ -62,6 +63,8 @@ export function Investigation({
   const [busy, setBusy] = useState(false);
   const [historical, setHistorical] = useState<Doc<"proposals"> | null>(null);
   useEffect(() => {
+    if (new URLSearchParams(location.search).get("tab") === "calculation")
+      setCalculationOpen(true);
     if (new URLSearchParams(location.search).get("tab") === "audit")
       setTab("audit");
   }, []);
@@ -85,8 +88,10 @@ export function Investigation({
   const sources = (historical?.input.sources ?? input.sources) as Source[];
   const openSource = (sid: string) => {
     const found = sources.find((s) => s.id === sid);
-    if (found) setSource(found);
-    else notify(`Source ${sid} is not in this evidence snapshot.`, false);
+    if (found) {
+      setCalculationOpen(false);
+      setSource(found);
+    } else notify(`Source ${sid} is not in this evidence snapshot.`, false);
   };
   const run = async (fn: () => Promise<{ ok: boolean; message: string }>) => {
     setBusy(true);
@@ -125,7 +130,7 @@ export function Investigation({
   };
   const decision = (
     <>
-      <Panel title="Decision & next action" meta={<ShieldCheck size={15} />}>
+      <Panel title="Decision control tower" meta={<ShieldCheck size={15} />}>
         <div className="panel-body decision-body">
           <div className="eyebrow">
             {c.resolution
@@ -336,7 +341,7 @@ export function Investigation({
   );
   const evidencePanel = (
     <Panel
-      title="Contracts & evidence"
+      title="Agreement lineage"
       meta={<span className="count-pill">{input.sources.length}</span>}
     >
       <div className="evidence-timeline">
@@ -388,7 +393,7 @@ export function Investigation({
   const financial = (
     <>
       <Panel
-        title="Financial reconciliation"
+        title="Proof board"
         meta={<span className="currency-tag">USD</span>}
       >
         <div className="calculation-intro">
@@ -447,7 +452,12 @@ export function Investigation({
                         </button>
                       </td>
                       <td className="numeric">
-                        <strong>{money(cohort.amountCents)}</strong>
+                        <button
+                          className="amount-link"
+                          onClick={() => openSource(cohort.sourceId)}
+                        >
+                          {money(cohort.amountCents)}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -457,7 +467,12 @@ export function Investigation({
             <div className="financial-totals">
               <div>
                 <span>Supported contractual total</span>
-                <strong>{money(result.expectedCents)}</strong>
+                <button
+                  className="amount-link"
+                  onClick={() => setCalculationOpen(true)}
+                >
+                  {money(result.expectedCents)}
+                </button>
               </div>
               <div>
                 <span>Vendor invoice</span>
@@ -484,12 +499,16 @@ export function Investigation({
                     ? "Reconciled difference"
                     : "Proposed discrepancy"}
                 </span>
-                <strong>
+                <button
+                  className="amount-link"
+                  onClick={() => setCalculationOpen(true)}
+                  aria-label="Explain discrepancy calculation"
+                >
                   {result.differenceCents && result.differenceCents > 0
                     ? "+"
                     : ""}
                   {money(result.differenceCents)}
-                </strong>
+                </button>
               </div>
             </div>
             <div className="calculation-note">
@@ -518,7 +537,7 @@ export function Investigation({
         <Panel title="Where the records disagree">
           <div className="conflict-comparison">
             <div>
-              <span className="eyebrow">VENDOR INVOICE</span>
+              <span className="eyebrow">Vendor invoice</span>
               <strong>
                 {input.lines
                   .map((l) => `${l.quantity} × ${money(l.rateCents)}`)
@@ -532,7 +551,7 @@ export function Investigation({
             </div>
             <ArrowRight size={18} />
             <div>
-              <span className="eyebrow">SIGNED TERMS</span>
+              <span className="eyebrow">Signed terms</span>
               <strong>
                 {result.cohorts
                   .map((l) => `${l.quantity} × ${money(l.rateCents)}`)
@@ -698,26 +717,45 @@ export function Investigation({
       </div>
       <div className="case-metrics">
         <div>
-          <small>INVOICED</small>
-          <strong>{money(invoiceCents)}</strong>
+          <small>Invoiced</small>
+          <strong>
+            <button
+              className="amount-link"
+              onClick={() => openSource(input.code)}
+            >
+              {money(invoiceCents)}
+            </button>
+          </strong>
           <span>Vendor submitted amount</span>
         </div>
         <div>
-          <small>EXPECTED</small>
-          <strong>{money(result?.expectedCents)}</strong>
+          <small>Expected</small>
+          <strong>
+            <button
+              className="amount-link"
+              onClick={() => setCalculationOpen(true)}
+            >
+              {money(result?.expectedCents)}
+            </button>
+          </strong>
           <span>Validated contractual charge</span>
         </div>
         <div className={result?.differenceCents ? "metric-discrepancy" : ""}>
           <small>
             {result?.differenceCents === 0
-              ? "DIFFERENCE"
+              ? "Difference"
               : c.resolution
-                ? "ORIGINAL DISCREPANCY"
-                : "PROPOSED DISCREPANCY"}
+                ? "Original discrepancy"
+                : "Proposed discrepancy"}
           </small>
           <strong>
-            {result?.differenceCents && result.differenceCents > 0 ? "+" : ""}
-            {money(result?.differenceCents)}
+            <button
+              className="amount-link"
+              onClick={() => setCalculationOpen(true)}
+            >
+              {result?.differenceCents && result.differenceCents > 0 ? "+" : ""}
+              {money(result?.differenceCents)}
+            </button>
           </strong>
           <span>
             {result?.differenceCents === 0
@@ -921,6 +959,58 @@ export function Investigation({
         </div>
       )}
       <Dialog
+        open={calculationOpen}
+        onOpenChange={setCalculationOpen}
+        title="Reconciliation calculation"
+        description="Trace the supported charge and invoice difference to their source records."
+      >
+        {result ? (
+          <>
+            <p>{result.explanation}</p>
+            <div className="calculation-details">
+              {result.cohorts.map((cohort, i) => (
+                <div key={`${cohort.termId}-${i}`}>
+                  <p className="mono">
+                    {cohort.quantity} × {money(cohort.rateCents)} ={" "}
+                    {money(cohort.amountCents)}
+                  </p>
+                  <button
+                    className="source-ref"
+                    onClick={() => openSource(cohort.sourceId)}
+                  >
+                    {cohort.sourceId} · View governing clause{" "}
+                    <ArrowUpRight size={12} />
+                  </button>
+                </div>
+              ))}
+              <p>
+                Supported total: <strong>{money(result.expectedCents)}</strong>
+              </p>
+              <p className="mono">
+                {money(result.invoiceCents)} − {money(result.expectedCents)} ={" "}
+                {money(result.differenceCents)}
+              </p>
+              <button
+                className="source-ref"
+                onClick={() => openSource(input.code)}
+              >
+                View conflicting invoice <ArrowUpRight size={12} />
+              </button>
+              <button
+                className="source-ref"
+                onClick={() => openSource(input.service.sourceId)}
+              >
+                View delivery record <ArrowUpRight size={12} />
+              </button>
+            </div>
+          </>
+        ) : (
+          <p>
+            The supporting calculation will be available after investigation.
+          </p>
+        )}
+      </Dialog>
+      <Dialog
         open={!!source}
         onOpenChange={(v) => !v && setSource(null)}
         title={source?.title ?? "Source evidence"}
@@ -1001,7 +1091,14 @@ export function Investigation({
           {dialog === "resolve" && (
             <div className="resolution-amount">
               <small>Vendor-accepted corrected amount</small>
-              <strong>{money(result?.expectedCents)}</strong>
+              <strong>
+                <button
+                  className="amount-link"
+                  onClick={() => setCalculationOpen(true)}
+                >
+                  {money(result?.expectedCents)}
+                </button>
+              </strong>
             </div>
           )}
           <label className="form-label">

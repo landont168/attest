@@ -32,15 +32,11 @@ export function Status({
     candidate: "Proposed policy",
     superseded: "Superseded",
   };
-  const tone = ["POSTED", "active"].includes(state)
+  const tone = ["POSTED", "APPROVED", "active"].includes(state)
     ? "green"
-    : [
-          "PROPOSED",
-          "NEEDS_INFO",
-          "APPROVED",
-          "candidate",
-          "REVISION_REQUIRED",
-        ].includes(state)
+    : ["PROPOSED", "NEEDS_INFO", "candidate", "REVISION_REQUIRED"].includes(
+          state,
+        )
       ? "amber"
       : ["REJECTED", "FAILED_RETRYABLE"].includes(state)
         ? "red"

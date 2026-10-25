@@ -51,11 +51,11 @@ import { Investigation } from "./investigation";
 export type Notify = (message: string, ok?: boolean) => void;
 const links = [
   { name: "Overview", href: "/overview", icon: LayoutDashboard },
-  { name: "Work Queue", href: "/work", icon: ListTodo },
+  { name: "Work queue", href: "/work", icon: ListTodo },
   { name: "Contracts", href: "/contracts", icon: FileText },
   { name: "Approvals", href: "/approvals", icon: CheckCheck },
   { name: "Policies", href: "/policies", icon: BookOpen },
-  { name: "Audit Trail", href: "/audit", icon: ActivityIcon },
+  { name: "Audit trail", href: "/audit", icon: ActivityIcon },
   { name: "Evaluation", href: "/evaluation", icon: ShieldCheck },
   { name: "Integrations", href: "/integrations", icon: Unplug },
 ];
@@ -87,8 +87,8 @@ export function AttestApp() {
     );
   const current =
     path === "/"
-      ? "Work Queue"
-      : (links.find((l) => path.startsWith(l.href))?.name ?? "Work Queue");
+      ? "Work queue"
+      : (links.find((l) => path.startsWith(l.href))?.name ?? "Work queue");
   const isDetail = path.startsWith("/work/") && path.split("/").length > 2;
   const currentCase = isDetail
     ? snapshot.cases.find((c) => c._id === path.split("/")[2])
@@ -103,7 +103,27 @@ export function AttestApp() {
       <aside className={cn("sidebar", mobile && "sidebar-open")}>
         <Link className="product-brand" href="/work">
           <span className="brand-mark">
-            <Layers3 size={23} />
+            <svg
+              width="28"
+              height="30"
+              viewBox="0 0 28 30"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 25 12 5h4l9 20M8 18h12"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+              />
+              <path
+                d="m10 24 3 3 6-7"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </span>
           <span>
             attest<span className="brand-period">.</span>
@@ -119,12 +139,12 @@ export function AttestApp() {
           </div>
           <ChevronDown size={13} />
         </div>
-        <div className="sidebar-label">WORKSPACE</div>
+        <div className="sidebar-label">Workspace</div>
         <nav>
           {links.map((item, i) => (
             <div key={item.name}>
-              {i === 4 && <div className="sidebar-label">INTELLIGENCE</div>}
-              {i === 7 && <div className="sidebar-label">SYSTEM</div>}
+              {i === 4 && <div className="sidebar-label">Intelligence</div>}
+              {i === 7 && <div className="sidebar-label">System</div>}
               <Link
                 href={item.href}
                 className={cn("nav-item", current === item.name && "active")}
@@ -151,7 +171,7 @@ export function AttestApp() {
             <span className="live-dot" />
             <div>
               <strong>Workspace connected</strong>
-              <small>Convex · reactive updates</small>
+              <small>Synthetic team-travel records</small>
             </div>
           </div>
           <button className="nav-item" onClick={() => setSettings(true)}>
@@ -271,13 +291,13 @@ export function AttestApp() {
               snapshot={snapshot}
               onScenario={() => setScenario(true)}
             />
-          ) : current === "Work Queue" ? (
+          ) : current === "Work queue" ? (
             <Queue snapshot={snapshot} onScenario={() => setScenario(true)} />
           ) : current === "Contracts" ? (
             <Contracts snapshot={snapshot} />
           ) : current === "Approvals" ? (
             <Approvals snapshot={snapshot} />
-          ) : current === "Audit Trail" ? (
+          ) : current === "Audit trail" ? (
             <AuditPage snapshot={snapshot} />
           ) : current === "Policies" ? (
             <Policies snapshot={snapshot} notify={notify} />
@@ -383,7 +403,15 @@ function Metric({
         {label}
         <Icon size={16} />
       </div>
-      <div className={cn("metric-value", tone)}>{value}</div>
+      <div className={cn("metric-value", tone)}>
+        {typeof value === "string" && value.includes("$") ? (
+          <Link href="/work" className="amount-link">
+            {value}
+          </Link>
+        ) : (
+          value
+        )}
+      </div>
       <div className="metric-detail">{detail}</div>
     </div>
   );
@@ -435,16 +463,26 @@ function Table({ cases }: { cases: CaseRow[] }) {
                 <small className="cell-sub">{c.input.destination}</small>
               </td>
               <td className="numeric">
-                {money(
-                  c.result?.invoiceCents ??
-                    c.input.lines.reduce(
-                      (n, l) => n + l.quantity * l.rateCents,
-                      0,
-                    ),
-                )}
+                <Link
+                  className="amount-link"
+                  href={`/work/${c._id}?tab=calculation`}
+                >
+                  {money(
+                    c.result?.invoiceCents ??
+                      c.input.lines.reduce(
+                        (n, l) => n + l.quantity * l.rateCents,
+                        0,
+                      ),
+                  )}
+                </Link>
               </td>
               <td className="numeric muted">
-                {money(c.result?.expectedCents)}
+                <Link
+                  className="amount-link"
+                  href={`/work/${c._id}?tab=calculation`}
+                >
+                  {money(c.result?.expectedCents)}
+                </Link>
               </td>
               <td
                 className={cn(
@@ -453,7 +491,10 @@ function Table({ cases }: { cases: CaseRow[] }) {
                 )}
               >
                 {c.result?.differenceCents ? (
-                  `${c.result.differenceCents > 0 ? "+" : ""}${money(c.result.differenceCents)}`
+                  <Link
+                    className="amount-link"
+                    href={`/work/${c._id}?tab=calculation`}
+                  >{`${c.result.differenceCents > 0 ? "+" : ""}${money(c.result.differenceCents)}`}</Link>
                 ) : c.result?.differenceCents === 0 ? (
                   <span className="matched-mini">
                     <Check size={12} /> Matched
@@ -537,9 +578,9 @@ function Queue({
   return (
     <>
       <SectionTitle
-        eyebrow="TEAM TRAVEL / CONTRACT FINANCE"
-        title="Finance work queue"
-        description="Every agreement remembered. Every invoice accounted for."
+        eyebrow="Team travel / Contract finance"
+        title="Work queue"
+        description="Contract-backed invoices, investigations, and approvals."
         action={
           <Button onClick={onScenario}>
             <Plus size={16} />
@@ -581,6 +622,59 @@ function Queue({
           icon={FileText}
         />
       </div>
+      {(() => {
+        const focus = snapshot.cases.find(
+          (c) =>
+            c.result &&
+            (c.result.differenceCents ?? 0) > 0 &&
+            c.state !== "POSTED",
+        );
+        if (!focus?.result) return null;
+        return (
+          <section
+            className="case-spotlight"
+            aria-label="Investigation in focus"
+          >
+            <div>
+              <div className="spotlight-kicker">
+                <span className="live-dot" /> Investigation in focus
+              </div>
+              <h2>{focus.input.vendor}</h2>
+              <p>Contract terms, service records, and invoice evidence.</p>
+              <p className="mono">
+                {focus.input.code} · {focus.input.destination}
+              </p>
+              <Link className="spotlight-link" href={`/work/${focus._id}`}>
+                Open investigation <ArrowUpRight size={14} />
+              </Link>
+            </div>
+            <Link
+              className="spotlight-proof"
+              href={`/work/${focus._id}?tab=calculation`}
+              aria-label={`Inspect the calculation for ${focus.input.vendor}`}
+            >
+              <div>
+                <small>Vendor invoiced</small>
+                <strong>{money(focus.result.invoiceCents)}</strong>
+              </div>
+              <ArrowRight size={18} />
+              <div>
+                <small>Evidence supports</small>
+                <strong>{money(focus.result.expectedCents)}</strong>
+              </div>
+              <div className="spotlight-difference">
+                <b>
+                  {money(focus.result.differenceCents)} proposed discrepancy
+                </b>
+                <span>
+                  Review the evidence{" "}
+                  <ArrowUpRight size={12} style={{ display: "inline" }} />
+                </span>
+              </div>
+            </Link>
+          </section>
+        );
+      })()}
       <div className="panel queue-panel">
         <div className="queue-tabs">
           {["All work", ...Object.keys(groups)].map((t) => (
@@ -671,7 +765,7 @@ function Overview({
   return (
     <>
       <SectionTitle
-        eyebrow="FINANCE OPERATIONS"
+        eyebrow="Finance operations"
         title="Finance overview"
         description="Golden State Warriors · Team Travel Operations"
         action={
@@ -684,7 +778,7 @@ function Overview({
       <div className="overview-banner">
         <div>
           <span className="eyebrow">
-            AGREEMENTS. OPERATIONS. ACCOUNTABILITY.
+            Agreements. Operations. Accountability.
           </span>
           <h2>
             Your finance work,
