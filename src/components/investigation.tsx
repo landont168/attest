@@ -38,6 +38,7 @@ import {
   authorizeFinance,
   DEFAULT_APPROVAL_LIMIT,
 } from "@/lib/finance/organization";
+import { RetrievalEvidence } from "./retrieval-evidence";
 import { VendorLogo } from "./vendor-logo";
 export function Investigation({
   id,
@@ -928,6 +929,7 @@ export function Investigation({
             />
           </Panel>
           <Panel title="Provider runs">
+            <RetrievalEvidence caseId={id} />
             <div className="panel-body">
               {c.mode === "deterministic" ? (
                 <Notice>

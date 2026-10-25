@@ -24,6 +24,8 @@ export const providers = query({
     creao: v.boolean(),
     hasCompletedRun: v.boolean(),
     policyLearner: v.boolean(),
+    moss: v.boolean(),
+    mossLastOutcome: v.union(v.string(), v.null()),
     mode: v.string(),
   }),
   handler: async (ctx) => {
@@ -32,6 +34,11 @@ export const providers = query({
       .query("cases")
       .withIndex("by_sandboxId", (q) => q.eq("sandboxId", p.sandboxId))
       .take(40);
+    const retrieval = await ctx.db
+      .query("retrievals")
+      .withIndex("by_sandboxId", (q) => q.eq("sandboxId", p.sandboxId))
+      .order("desc")
+      .first();
     return {
       hasCompletedRun: cases.some(
         (c) =>
@@ -41,6 +48,8 @@ export const providers = query({
       policyLearner:
         !!env.CREAO_POLICY_AGENT_ID &&
         !!(env.CREAO_POLICY_API_KEY || env.CREAO_API_KEY),
+      moss: !!env.MOSS_PROJECT_ID && !!env.MOSS_PROJECT_KEY,
+      mossLastOutcome: retrieval?.outcome ?? null,
       mode: (await ctx.db.get(p.sandboxId))!.mode,
     };
   },
@@ -114,7 +123,13 @@ export const begin = internalMutation({
     });
     const precedents = await ctx.db
       .query("precedents")
-      .withIndex("by_sandboxId", (q) => q.eq("sandboxId", c.sandboxId))
+      .withIndex("by_sandboxId_and_vendor_and_active", (q) =>
+        q
+          .eq("sandboxId", c.sandboxId)
+          .eq("vendor", c.input.vendor)
+          .eq("active", true),
+      )
+      .order("desc")
       .take(30);
     await audit(
       ctx,
@@ -155,6 +170,16 @@ export const noteRun = internalMutation({
     const c = await ctx.db.get(args.caseId);
     if (!c || c.attempt !== args.attempt || c.state !== "INVESTIGATING")
       return null;
+    if (args.externalId) {
+      const search = await ctx.db
+        .query("retrievals")
+        .withIndex("by_caseId_and_attempt", (q) =>
+          q.eq("caseId", c._id).eq("attempt", args.attempt),
+        )
+        .unique();
+      if (search && !search.passedToAgent)
+        await ctx.db.patch(search._id, { passedToAgent: true });
+    }
     const rows = await ctx.db
       .query("runs")
       .withIndex("by_caseId", (q) => q.eq("caseId", c._id))

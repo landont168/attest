@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import {
+  retrievalTarget,
+  retrievalDocument,
+  retrievalHit,
+  retrievalOutcome,
+} from "./retrievalValidators";
+import {
   humanRole,
   mode,
   invoiceInput,
@@ -235,6 +241,7 @@ export default defineSchema({
     caseId: v.optional(v.id("cases")),
     correctionId: v.optional(v.id("corrections")),
     contextJson: v.optional(v.string()),
+    proposalContextJson: v.optional(v.string()),
     outputJson: v.optional(v.string()),
     raw: v.optional(v.string()),
     outcome: v.optional(v.string()),
@@ -321,6 +328,30 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_caseId", ["caseId"])
+    .index("by_sandboxId", ["sandboxId"]),
+  retrievals: defineTable({
+    sandboxId: v.id("sandboxes"),
+    target: retrievalTarget,
+    caseId: v.optional(v.id("cases")),
+    attempt: v.optional(v.number()),
+    jobId: v.optional(v.id("policyRuns")),
+    version: v.string(),
+    query: v.string(),
+    documents: v.array(retrievalDocument),
+    status: v.union(v.literal("pending"), v.literal("completed")),
+    outcome: v.optional(retrievalOutcome),
+    hits: v.array(retrievalHit),
+    selectedCodes: v.array(v.string()),
+    rejectedCount: v.number(),
+    queryMs: v.optional(v.number()),
+    totalMs: v.optional(v.number()),
+    error: v.optional(v.string()),
+    passedToAgent: v.boolean(),
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_caseId_and_attempt", ["caseId", "attempt"])
+    .index("by_jobId", ["jobId"])
     .index("by_sandboxId", ["sandboxId"]),
   periods: defineTable({
     sandboxId: v.id("sandboxes"),
