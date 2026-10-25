@@ -13,6 +13,8 @@ export type Snapshot = {
   corrections?: Doc<"corrections">[];
 };
 export type Detail = {
+  subtasks?: Doc<"subtasks">[];
+  disputes?: Doc<"disputes">[];
   case: Doc<"cases">;
   proposals: Doc<"proposals">[];
   audit: Doc<"audit">[];

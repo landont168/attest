@@ -218,6 +218,7 @@ async function main() {
     const input = hotelFixture(`LIVE-LEARN-${stamp}`);
     input.sources[1].title = "Block extension · signed room schedule";
     const caseId = await client.mutation(api.workspace.inject, { input });
+    if (!caseId) throw new Error("Invoice ingestion denied.");
     const before = await waitCase(caseId);
     check(
       "Baseline asks for scope confirmation",
@@ -282,6 +283,7 @@ async function main() {
     const next = hotelFixture(`LIVE-NEXT-${stamp}`);
     next.sources[1].title = input.sources[1].title;
     const nextId = await client.mutation(api.workspace.inject, { input: next });
+    if (!nextId) throw new Error("Invoice ingestion denied.");
     const after = await waitCase(nextId);
     check(
       "Subsequent invoice uses learned procedure and correct amount",
@@ -300,6 +302,7 @@ async function main() {
     const missingId = await client.mutation(api.workspace.inject, {
       input: missing,
     });
+    if (!missingId) throw new Error("Invoice ingestion denied.");
     const held = await waitCase(missingId);
     check(
       "Missing signature still withholds amount",
@@ -323,6 +326,7 @@ async function main() {
     const regressionId = await client.mutation(api.workspace.inject, {
       input: regression,
     });
+    if (!regressionId) throw new Error("Invoice ingestion denied.");
     const final = await waitCase(regressionId);
     check(
       "Existing invoice investigator still finds the discrepancy",

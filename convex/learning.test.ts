@@ -39,6 +39,7 @@ async function setup() {
   const input = hotelFixture("LEARN-TEST");
   input.sources[1].title = "Block extension · signed room schedule";
   const id = await client.mutation(api.workspace.inject, { input });
+  if (!id) throw new Error("Invoice ingestion denied.");
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   return {
     t,
@@ -154,6 +155,7 @@ it("captures immutable evidence, waits for acceptance, deduplicates callbacks an
   const input = hotelFixture("LEARN-NEXT");
   input.sources[1].title = s.input.sources[1].title;
   const next = await s.client.mutation(api.workspace.inject, { input });
+  if (!next) throw new Error("Invoice ingestion denied.");
   await s.t.finishAllScheduledFunctions(vi.runAllTimers);
   const after = await s.client.query(api.cases.detail, { id: next });
   expect(after.case.state).toBe("PROPOSED");

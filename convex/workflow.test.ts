@@ -73,7 +73,7 @@ describe("Persistent financial workflow", () => {
     const s = await client.query(api.workspace.snapshot, {});
     assert(s);
     assert(s.sandbox);
-    expect(s.cases).toHaveLength(4);
+    expect(s.cases).toHaveLength(7);
     const main = s.cases.find(
       (c: { input: { code: string } }) => c.input.code === "INV-HOTEL-001",
     );
@@ -91,14 +91,16 @@ describe("Persistent financial workflow", () => {
     const a = await client.mutation(api.workspace.inject, {
       input: hotelFixture(),
     });
+    if (!a) throw new Error("Invoice ingestion denied.");
     const b = await client.mutation(api.workspace.inject, {
       input: hotelFixture(),
     });
+    if (!b) throw new Error("Invoice ingestion denied.");
     expect(a).toBe(b);
     const s = await client.query(api.workspace.snapshot, {});
     assert(s);
     assert(s.sandbox);
-    expect(s.cases).toHaveLength(4);
+    expect(s.cases).toHaveLength(7);
     expect(
       s.audit.some(
         (a: { action: string }) => a.action === "duplicate_ingestion_prevented",
@@ -359,6 +361,7 @@ describe("Investigation recovery and policy correction", () => {
     await t.run((ctx) =>
       ctx.db.patch(c._id, { mode: "creao", runId: "old-completed-run" }),
     );
+    await client.mutation(api.workspace.setRole, { role: "human_controller" });
     await client.mutation(api.cases.resume, {
       id: c._id,
       answer: "Preserve the original signed room rate.",
@@ -435,6 +438,7 @@ describe("Investigation recovery and policy correction", () => {
     const input = hotelFixture("LEARNING-1");
     input.sources[1].title = "Block extension · signed room schedule";
     const id = await client.mutation(api.workspace.inject, { input });
+    if (!id) throw new Error("Invoice ingestion denied.");
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect((await client.query(api.cases.detail, { id })).case.state).toBe(
       "NEEDS_INFO",
@@ -471,6 +475,7 @@ describe("Investigation recovery and policy correction", () => {
     next.code = "LEARNING-2";
     next.sources.find((s) => s.kind === "invoice")!.id = next.code;
     const nextId = await client.mutation(api.workspace.inject, { input: next });
+    if (!nextId) throw new Error("Invoice ingestion denied.");
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     const d = await client.query(api.cases.detail, { id: nextId });
     expect(d.case.state).toBe("PROPOSED");

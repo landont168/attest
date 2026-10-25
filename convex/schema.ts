@@ -16,11 +16,14 @@ export default defineSchema({
   profiles: defineTable({
     identity: v.string(),
     role: humanRole,
+    employeeId: v.optional(v.id("employees")),
     sandboxId: v.id("sandboxes"),
   }).index("by_identity", ["identity"]),
   sandboxes: defineTable({
     owner: v.string(),
     generation: v.number(),
+    teamVersion: v.optional(v.number()),
+    routineApprovalLimitCents: v.optional(v.number()),
     mode,
     archived: v.boolean(),
     createdAt: v.number(),
@@ -28,6 +31,7 @@ export default defineSchema({
   cases: defineTable({
     sandboxId: v.id("sandboxes"),
     input: invoiceInput,
+    ownerActorId: v.optional(v.string()),
     revision: v.number(),
     state,
     phase: v.string(),
@@ -79,6 +83,10 @@ export default defineSchema({
     revision: v.number(),
   }).index("by_caseId", ["caseId"]),
   questions: defineTable({
+    assignedActorId: v.optional(v.string()),
+    requiredRole: v.optional(humanRole),
+    evidenceKind: v.optional(v.string()),
+    status: v.optional(v.string()),
     caseId: v.id("cases"),
     text: v.string(),
     createdAt: v.number(),
@@ -239,6 +247,81 @@ export default defineSchema({
     .index("by_sandboxId", ["sandboxId"])
     .index("by_correctionId", ["correctionId"])
     .index("by_retryOf", ["retryOf"]),
+  employees: defineTable({
+    sandboxId: v.id("sandboxes"),
+    code: v.string(),
+    actorId: v.string(),
+    name: v.string(),
+    role,
+    kind: v.string(),
+    department: v.string(),
+  })
+    .index("by_sandboxId_and_code", ["sandboxId", "code"])
+    .index("by_sandboxId", ["sandboxId"]),
+  subtasks: defineTable({
+    sandboxId: v.id("sandboxes"),
+    caseId: v.id("cases"),
+    revision: v.number(),
+    attempt: v.number(),
+    assignedActorId: v.string(),
+    requestedBy: v.string(),
+    kind: v.union(
+      v.literal("contract"),
+      v.literal("payment"),
+      v.literal("dispute"),
+    ),
+    request: v.string(),
+    requiredEvidence: v.array(v.string()),
+    status: v.string(),
+    output: v.optional(v.any()),
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+    error: v.optional(v.string()),
+    auditId: v.optional(v.id("audit")),
+  })
+    .index("by_caseId", ["caseId"])
+    .index("by_sandboxId", ["sandboxId"]),
+  bankRecords: defineTable({
+    sandboxId: v.id("sandboxes"),
+    transactionId: v.string(),
+    contractId: v.string(),
+    vendorId: v.string(),
+    amountCents: v.number(),
+    paidAt: v.string(),
+    status: v.string(),
+    sourceId: v.string(),
+  })
+    .index("by_sandboxId_and_transactionId", ["sandboxId", "transactionId"])
+    .index("by_sandboxId", ["sandboxId"]),
+  paymentCredits: defineTable({
+    sandboxId: v.id("sandboxes"),
+    invoiceCode: v.string(),
+    transactionId: v.string(),
+    contractId: v.string(),
+    vendorId: v.string(),
+    amountCents: v.number(),
+    sourceId: v.string(),
+  })
+    .index("by_sandboxId_and_invoiceCode", ["sandboxId", "invoiceCode"])
+    .index("by_sandboxId_and_transactionId", ["sandboxId", "transactionId"])
+    .index("by_sandboxId", ["sandboxId"]),
+  disputes: defineTable({
+    sandboxId: v.id("sandboxes"),
+    caseId: v.id("cases"),
+    proposalId: v.id("proposals"),
+    revision: v.number(),
+    assignedActorId: v.string(),
+    amountCents: v.number(),
+    status: v.string(),
+    draft: v.string(),
+    evidenceIds: v.array(v.string()),
+    requiredApprover: v.string(),
+    communicationMode: v.literal("draft_only"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_caseId", ["caseId"])
+    .index("by_sandboxId", ["sandboxId"]),
   periods: defineTable({
     sandboxId: v.id("sandboxes"),
     month: v.string(),

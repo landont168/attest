@@ -1,4 +1,12 @@
 import {
+  delegateSpecialists,
+  executeSpecialist,
+  loadPaymentFinding,
+  assignHumanRequest,
+  prepareDispute,
+} from "./team";
+import { applySettlement } from "../src/lib/finance/settlement";
+import {
   internalMutation,
   internalQuery,
   query,
@@ -99,6 +107,11 @@ export const begin = internalMutation({
       "INVESTIGATING",
       c.input.sources.map((s) => s.id),
     );
+    await delegateSpecialists(ctx, {
+      ...c,
+      state: "INVESTIGATING",
+      attempt: c.attempt + 1,
+    });
     const precedents = await ctx.db
       .query("precedents")
       .withIndex("by_sandboxId", (q) => q.eq("sandboxId", c.sandboxId))
@@ -192,6 +205,14 @@ export const complete = internalMutation({
       c.mode === "creao"
         ? validateInterpretation(input, args.raw)
         : reconcile(input);
+    await delegateSpecialists(ctx, c);
+    // Also supports older callers of complete: queued tools still execute and persist real findings.
+    if (
+      !(await executeSpecialist(ctx, c, "contract")) ||
+      !(await executeSpecialist(ctx, c, "payment"))
+    )
+      throw new Error("Specialist work failed; financial proposal withheld.");
+    result = applySettlement(input, result, await loadPaymentFinding(ctx, c));
     const policy = c.policyId ? await ctx.db.get(c.policyId) : null;
     if (policy && needsScopeReview(input, policy.procedure, policy.vendor))
       result = {
@@ -256,11 +277,11 @@ export const complete = internalMutation({
       result.evidenceIds,
     );
     if (result.disposition === "needs_info") {
-      await ctx.db.insert("questions", {
-        caseId: c._id,
-        text: result.issues.join(" "),
-        createdAt: Date.now(),
-      });
+      await assignHumanRequest(
+        ctx,
+        { ...c, proposalId },
+        result.issues.join(" "),
+      );
       await transition(
         ctx,
         { ...c, proposalId },
@@ -278,6 +299,7 @@ export const complete = internalMutation({
             ? "Review proposed invoice dispute"
             : "Review matched invoice posting",
       );
+    await prepareDispute(ctx, { ...c, proposalId }, proposalId);
     return result;
   },
 });

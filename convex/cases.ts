@@ -1,3 +1,13 @@
+import {
+  authorizeFinance,
+  DEFAULT_APPROVAL_LIMIT,
+} from "../src/lib/finance/organization";
+import {
+  loadPaymentFinding,
+  assignHumanRequest,
+  updateDisputeStatus,
+} from "./team";
+import { applySettlement } from "../src/lib/finance/settlement";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -20,6 +30,14 @@ export const detail = query({
     const { c } = await ownedCase(ctx, id);
     return {
       case: c,
+      subtasks: await ctx.db
+        .query("subtasks")
+        .withIndex("by_caseId", (q) => q.eq("caseId", id))
+        .take(100),
+      disputes: await ctx.db
+        .query("disputes")
+        .withIndex("by_caseId", (q) => q.eq("caseId", id))
+        .take(30),
       proposals: await ctx.db
         .query("proposals")
         .withIndex("by_caseId", (q) => q.eq("caseId", id))
@@ -79,7 +97,7 @@ export const review = mutation({
         c,
         `${args.operation}_denied`,
         message,
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -93,13 +111,17 @@ export const review = mutation({
     )
       return deny("This proposal is stale or no longer awaiting review.");
     const requiresController = !!c.resolution;
-    const auth = permission(
-      p.role,
-      "approve",
-      p.identity,
-      proposal.proposedBy,
+    const auth = authorizeFinance({ id: p.actorId, role: p.role }, "approve", {
+      proposer: proposal.proposedBy,
       requiresController,
-    );
+      amountCents:
+        proposal.result.disposition === "disputed" && !c.resolution
+          ? Math.abs(proposal.result.differenceCents ?? 0)
+          : (proposal.result.expectedCents ?? 0),
+      limitCents:
+        (await ctx.db.get(c.sandboxId))?.routineApprovalLimitCents ??
+        DEFAULT_APPROVAL_LIMIT,
+    });
     if (!auth.ok) return deny(auth.reason);
     if (args.operation !== "approve" && !args.reason.trim())
       return deny("A reason is required.");
@@ -113,7 +135,7 @@ export const review = mutation({
           : args.operation === "reject"
             ? "rejected"
             : "needs_info",
-      actor: p.identity,
+      actor: p.actorId,
       role: p.role,
       reason:
         args.reason.trim() || "Reviewed source evidence and financial impact.",
@@ -125,7 +147,7 @@ export const review = mutation({
       c,
       `proposal_${args.operation}`,
       args.reason || "Source-backed proposal reviewed.",
-      p.identity,
+      p.actorId,
       p.role,
       true,
       c.state,
@@ -138,26 +160,32 @@ export const review = mutation({
         c,
         "REJECTED",
         "Proposal rejected; provide corrected evidence or reopen",
-        p.identity,
+        p.actorId,
         p.role,
+      );
+      await updateDisputeStatus(ctx, c, "rejected");
+      await audit(
+        ctx,
+        c,
+        "revision_requested",
+        "AP Analyst notified of the rejection; the previous proposal is retained and a revised proposal requires fresh approval.",
+        "attest-investigator",
+        "ai_agent",
       );
       return {
         ok: true,
-        message: "Proposal rejected and preserved in history.",
+        message:
+          "Proposal rejected and preserved. AP Analyst is waiting for revised evidence or a reasoned retry.",
       };
     }
     if (args.operation === "ask") {
-      await ctx.db.insert("questions", {
-        caseId: c._id,
-        text: args.reason.trim(),
-        createdAt: Date.now(),
-      });
+      await assignHumanRequest(ctx, c, args.reason.trim());
       await transition(
         ctx,
         c,
         "NEEDS_INFO",
         "Awaiting requested information",
-        p.identity,
+        p.actorId,
         p.role,
       );
       return {
@@ -172,9 +200,10 @@ export const review = mutation({
       proposal.result.disposition === "disputed" && !c.resolution
         ? "Dispute approved · awaiting vendor resolution"
         : "Approved · awaiting posting gateway",
-      p.identity,
+      p.actorId,
       p.role,
     );
+    await updateDisputeStatus(ctx, c, "approved");
     if (proposal.correctionId)
       await ctx.scheduler.runAfter(0, internal.corrections.accept, {
         proposalId: proposal._id,
@@ -256,7 +285,11 @@ export const post = internalMutation({
       ).ok
     )
       return deny("Approver lacks required authority.");
-    const result = reconcile(c.input as InvoiceInput);
+    const result = applySettlement(
+      c.input as InvoiceInput,
+      reconcile(c.input as InvoiceInput),
+      await loadPaymentFinding(ctx, c),
+    );
     if (
       result.expectedCents === null ||
       result.expectedCents !== proposal.result.expectedCents
@@ -278,7 +311,25 @@ export const post = internalMutation({
       .unique();
     if (!p || p.closed)
       return deny("The accounting period is closed or unavailable.");
-    const lines = payableJournal(result.expectedCents);
+    const allowed = authorizeFinance(
+      { id: approval.actor, role: approval.role },
+      "approve",
+      {
+        proposer: proposal.proposedBy,
+        requiresController: !!c.resolution,
+        amountCents: result.expectedCents,
+        limitCents:
+          (await ctx.db.get(c.sandboxId))?.routineApprovalLimitCents ??
+          DEFAULT_APPROVAL_LIMIT,
+      },
+    );
+    if (!allowed.ok) return deny(allowed.reason);
+    if ((result.depositCents ?? 0) !== (proposal.result.depositCents ?? 0))
+      return deny("Deposit evidence changed after approval.");
+    const lines = payableJournal(
+      result.expectedCents,
+      result.depositCents ?? 0,
+    );
     await ctx.db.insert("journals", {
       caseId: c._id,
       sandboxId: c.sandboxId,
@@ -315,13 +366,23 @@ export const post = internalMutation({
   },
 });
 export const resolve = mutation({
-  args: { id: v.id("cases"), amountCents: v.number(), reference: v.string() },
+  args: {
+    id: v.id("cases"),
+    amountCents: v.number(),
+    reference: v.string(),
+    responseText: v.optional(v.string()),
+  },
   returns: receipt,
   handler: async (ctx, args) => {
     const { p, c } = await ownedCase(ctx, args.id);
-    const result = reconcile(c.input as InvoiceInput);
+    const result = applySettlement(
+      c.input as InvoiceInput,
+      reconcile(c.input as InvoiceInput),
+      await loadPaymentFinding(ctx, c),
+    );
     if (
-      p.role !== "human_controller" ||
+      !["human_controller", "vendor_manager"].includes(p.role) ||
+      (p.role === "vendor_manager" && !args.responseText?.trim()) ||
       c.state !== "APPROVED" ||
       result.disposition !== "disputed" ||
       result.expectedCents !== args.amountCents ||
@@ -334,20 +395,23 @@ export const resolve = mutation({
         c,
         "vendor_resolution_denied",
         message,
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
       return { ok: false, message };
     }
+    await updateDisputeStatus(ctx, c, "resolved");
     const sourceId = `RES-${c.input.code}-R${c.revision + 1}`;
-    const text = `Synthetic vendor acceptance ${args.reference.trim()}: invoice corrected to ${(args.amountCents / 100).toFixed(2)} USD. Entered by simulated controller.`;
+    const text =
+      args.responseText?.trim() ||
+      `Synthetic vendor acceptance ${args.reference.trim()}: invoice corrected to ${(args.amountCents / 100).toFixed(2)} USD. Entered by simulated controller.`;
     await transition(
       ctx,
       c,
       "REVISION_REQUIRED",
       "Vendor resolution received; validating a new proposal",
-      p.identity,
+      p.actorId,
       p.role,
     );
     await ctx.db.patch(c._id, {
@@ -355,7 +419,7 @@ export const resolve = mutation({
         sourceId,
         amountCents: args.amountCents,
         text,
-        actor: p.identity,
+        actor: p.actorId,
       },
       input: {
         ...c.input,
@@ -381,7 +445,7 @@ export const resolve = mutation({
       c,
       "vendor_resolution_recorded",
       text,
-      p.identity,
+      p.actorId,
       p.role,
       true,
       "REVISION_REQUIRED",
@@ -404,6 +468,7 @@ export const resume = mutation({
   args: {
     id: v.id("cases"),
     answer: v.string(),
+    deliveredQuantity: v.optional(v.number()),
     correction: v.optional(
       v.object({
         kind: v.literal("overlooked_signed_schedule"),
@@ -430,13 +495,41 @@ export const resume = mutation({
         c.state,
         c.state,
         { caseId: c._id },
-        p.identity,
+        p.actorId,
         p.role,
         false,
         args.correction?.sourceIds ?? [],
       );
       return { ok: false, message };
     };
+    const responsePermission = authorizeFinance(
+      { id: p.actorId, role: p.role },
+      "respond",
+    );
+    if (!responsePermission.ok) return denyResponse(responsePermission.reason);
+    const assigned = await ctx.db
+      .query("questions")
+      .withIndex("by_caseId", (q) => q.eq("caseId", c._id))
+      .take(30);
+    const open = assigned.filter((q) => !q.answer);
+    if (
+      p.role === "travel_coordinator" &&
+      (args.evidence !== "service_confirmation" ||
+        !open.some((q) => q.requiredRole === "travel_coordinator") ||
+        args.correction)
+    )
+      return denyResponse(
+        "Travel Operations may only answer assigned delivery evidence requests.",
+      );
+    if (
+      c.state === "NEEDS_INFO" &&
+      p.role !== "human_controller" &&
+      p.role !== "travel_coordinator" &&
+      open.some((q) => q.requiredRole && q.requiredRole !== p.role)
+    )
+      return denyResponse(
+        "This information request is assigned to another role.",
+      );
     if (!["NEEDS_INFO", "REJECTED", "FAILED_RETRYABLE"].includes(c.state))
       return denyResponse("This case is not waiting for a response or retry.");
     const runs = await ctx.db
@@ -450,13 +543,20 @@ export const resume = mutation({
           "Submission outcome is uncertain. Check the CREAO run before starting a new request.",
         );
     }
-    if (args.evidence !== "note" && p.role !== "human_controller") {
+    if (
+      args.evidence !== "note" &&
+      p.role !== "human_controller" &&
+      !(
+        p.role === "travel_coordinator" &&
+        args.evidence === "service_confirmation"
+      )
+    ) {
       await audit(
         ctx,
         c,
         "evidence_denied",
         "A controller must record synthetic signed evidence.",
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -466,6 +566,13 @@ export const resume = mutation({
           "Switch to the simulated controller to record signed evidence.",
       };
     }
+    if (
+      args.deliveredQuantity !== undefined &&
+      (!Number.isSafeInteger(args.deliveredQuantity) ||
+        args.deliveredQuantity <= 0 ||
+        args.deliveredQuantity > 10000)
+    )
+      return denyResponse("A valid delivered quantity is required.");
     if (!args.answer.trim())
       return denyResponse("Describe the clarification or reason for retry.");
     if (args.correction) {
@@ -492,7 +599,7 @@ export const resume = mutation({
           c.state,
           c.state,
           { caseId: c._id },
-          p.identity,
+          p.actorId,
           p.role,
           false,
           args.correction.sourceIds,
@@ -518,7 +625,7 @@ export const resume = mutation({
         ),
         originalInput: original.input,
         explanation: args.answer,
-        actor: p.identity,
+        actor: p.actorId,
         createdAt: Date.now(),
       });
       await learningAudit(
@@ -529,7 +636,7 @@ export const resume = mutation({
         "none",
         "recorded",
         { correctionId, caseId: c._id },
-        p.identity,
+        p.actorId,
         p.role,
         true,
         args.correction.sourceIds,
@@ -571,6 +678,12 @@ export const resume = mutation({
       }
     if (args.evidence === "service_confirmation") {
       input.service.confirmed = true;
+      if (args.deliveredQuantity !== undefined)
+        input.service.quantity = args.deliveredQuantity;
+      if (
+        input.sources.some((s) => s.id === input.service.sourceId && !s.signed)
+      )
+        input.service.sourceId = `SRV-RESPONSE-${c.revision + 1}`;
       if (!input.sources.some((s) => s.id === input.service.sourceId))
         input.sources.push({
           id: input.service.sourceId,
@@ -586,11 +699,18 @@ export const resume = mutation({
       .query("questions")
       .withIndex("by_caseId", (q) => q.eq("caseId", c._id))
       .take(30);
-    for (const question of questions.filter((q) => !q.answer))
+    for (const question of questions.filter(
+      (q) =>
+        !q.answer &&
+        (p.role === "human_controller" ||
+          !q.requiredRole ||
+          q.requiredRole === p.role),
+    ))
       await ctx.db.patch(question._id, {
         answer: args.answer,
-        answeredBy: p.identity,
+        answeredBy: p.actorId,
         answeredAt: Date.now(),
+        status: "answered",
       });
     if (!questions.some((q) => !q.answer))
       await ctx.db.insert("questions", {
@@ -598,7 +718,7 @@ export const resume = mutation({
         text: "Investigation clarification",
         createdAt: Date.now(),
         answer: args.answer,
-        answeredBy: p.identity,
+        answeredBy: p.actorId,
         answeredAt: Date.now(),
       });
     await transition(
@@ -606,7 +726,7 @@ export const resume = mutation({
       c,
       "REVISION_REQUIRED",
       "Human response received; investigation resuming",
-      p.identity,
+      p.actorId,
       p.role,
     );
     const changed = JSON.stringify(input) !== JSON.stringify(c.input);
@@ -627,7 +747,7 @@ export const resume = mutation({
       c,
       "human_response",
       args.answer,
-      p.identity,
+      p.actorId,
       p.role,
       true,
       "REVISION_REQUIRED",
@@ -651,7 +771,23 @@ export const demonstrateDenial = mutation({
   },
   returns: receipt,
   handler: async (ctx, args) => {
-    const { c } = await ownedCase(ctx, args.id);
+    const { p, c } = await ownedCase(ctx, args.id);
+    const canDemonstrate = authorizeFinance(
+      { id: p.actorId, role: p.role },
+      "revise",
+    );
+    if (!canDemonstrate.ok) {
+      await audit(
+        ctx,
+        c,
+        "demonstration_denied",
+        canDemonstrate.reason,
+        p.actorId,
+        p.role,
+        false,
+      );
+      return { ok: false, message: canDemonstrate.reason };
+    }
     const auth = permission(
       "ai_agent",
       args.action,
@@ -686,7 +822,7 @@ export const reverse = mutation({
         c,
         "correction_denied",
         "Controller, posted entry, and explanation required.",
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -708,7 +844,7 @@ export const reverse = mutation({
         c,
         "duplicate_correction_prevented",
         "A linked reversal already exists.",
-        p.identity,
+        p.actorId,
         p.role,
       );
       return { ok: true, message: "Existing reversal retained." };
@@ -726,7 +862,7 @@ export const reverse = mutation({
       proposalId: original.proposalId,
       action: "reverse",
       decision: "approved",
-      actor: p.identity,
+      actor: p.actorId,
       role: p.role,
       reason: args.reason,
       createdAt: Date.now(),

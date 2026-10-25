@@ -6,7 +6,7 @@ import {
 } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { profile } from "./lib";
+import { profile, denyWorkspaceAction } from "./lib";
 import { workflow } from "./workflows";
 import { receipt } from "./validators";
 import {
@@ -30,6 +30,8 @@ export const propose = mutation({
   returns: receipt,
   handler: async (ctx, args) => {
     const p = await profile(ctx);
+    const denied = await denyWorkspaceAction(ctx, p, "propose_policy");
+    if (denied) return denied;
     const deny = async (message: string) => {
       await learningAudit(
         ctx,
@@ -39,7 +41,7 @@ export const propose = mutation({
         "unchanged",
         "unchanged",
         {},
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -80,7 +82,7 @@ export const propose = mutation({
         "none",
         "none",
         { caseId: c._id },
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -324,7 +326,7 @@ async function ownedPolicy(
       "unknown",
       "unknown",
       {},
-      p.identity,
+      p.actorId,
       p.role,
       false,
     );
@@ -348,7 +350,7 @@ export const activate = mutation({
         policy.status,
         policy.status,
         { policyId: id },
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -356,7 +358,7 @@ export const activate = mutation({
     };
     if (
       p.role !== "human_controller" ||
-      p.identity === policy.proposedBy ||
+      p.actorId === policy.proposedBy ||
       policy.status !== "candidate"
     )
       return deny(
@@ -399,7 +401,7 @@ export const activate = mutation({
       await ctx.db.patch(current.baseline._id, { status: "superseded" });
     await ctx.db.patch(id, {
       status: "active",
-      approvedBy: p.identity,
+      approvedBy: p.actorId,
       approvedAt: Date.now(),
     });
     await learningAudit(
@@ -410,7 +412,7 @@ export const activate = mutation({
       "candidate",
       "active",
       { policyId: id, jobId: job._id },
-      p.identity,
+      p.actorId,
       p.role,
       true,
       policy.precedentIds,
@@ -424,7 +426,7 @@ export const activate = mutation({
         "active",
         "superseded",
         { policyId: current.baseline._id },
-        p.identity,
+        p.actorId,
         p.role,
       );
     return { ok: true, message: "Policy activated for future investigations." };
@@ -449,7 +451,7 @@ export const reject = mutation({
       policy.status,
       ok ? "rejected" : policy.status,
       { policyId: id },
-      p.identity,
+      p.actorId,
       p.role,
       ok,
     );
@@ -460,7 +462,7 @@ export const reject = mutation({
       };
     await ctx.db.patch(id, {
       status: "rejected",
-      rejectedBy: p.identity,
+      rejectedBy: p.actorId,
       rejectedAt: Date.now(),
       rejectionReason: reason.trim(),
     });
@@ -483,7 +485,7 @@ export const reevaluate = mutation({
         policy.status,
         policy.status,
         { policyId: id },
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -502,7 +504,7 @@ export const reevaluate = mutation({
         policy.status,
         policy.status,
         { policyId: id },
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
@@ -559,7 +561,7 @@ export const reevaluate = mutation({
       "candidate",
       "candidate",
       { policyId: id, jobId: job._id },
-      p.identity,
+      p.actorId,
       p.role,
     );
     return {
@@ -585,12 +587,18 @@ export const retry = mutation({
         "unchanged",
         "unchanged",
         job?.sandboxId === p.sandboxId ? { jobId } : {},
-        p.identity,
+        p.actorId,
         p.role,
         false,
       );
       return { ok: false, message };
     };
+    const permissionDenied = await denyWorkspaceAction(
+      ctx,
+      p,
+      "propose_policy",
+    );
+    if (permissionDenied) return permissionDenied;
     if (!job || job.sandboxId !== p.sandboxId)
       return deny("Learning job not found.");
     if (job.status !== "failed") return deny("Only failed jobs can resume.");
@@ -624,7 +632,7 @@ export const retry = mutation({
         "failed",
         "queued",
         { jobId: nextId },
-        p.identity,
+        p.actorId,
         p.role,
       );
       return {
@@ -643,7 +651,7 @@ export const retry = mutation({
       "failed",
       "queued",
       { jobId },
-      p.identity,
+      p.actorId,
       p.role,
     );
     return { ok: true, message: "Learning job resumed." };

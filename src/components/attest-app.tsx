@@ -28,6 +28,7 @@ import {
   Settings2,
   ShieldCheck,
   Unplug,
+  Users,
   X,
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
@@ -46,6 +47,12 @@ import {
   SectionTitle,
   Status,
 } from "./primitives";
+import { FinanceTeam } from "./finance-team";
+import {
+  HUMAN_ROLES,
+  ROLE_TITLES,
+  type HumanRole,
+} from "@/lib/finance/organization";
 import { Investigation } from "./investigation";
 import { VendorLogo } from "./vendor-logo";
 import { BrandLogo } from "./brand-logo";
@@ -56,6 +63,7 @@ const links = [
   { name: "Work queue", href: "/work", icon: ListTodo },
   { name: "Contracts", href: "/contracts", icon: FileText },
   { name: "Approvals", href: "/approvals", icon: CheckCheck },
+  { name: "Finance team", href: "/team", icon: Users },
   { name: "Policies", href: "/policies", icon: BookOpen },
   { name: "Audit trail", href: "/audit", icon: ActivityIcon },
   { name: "Evaluation", href: "/evaluation", icon: ShieldCheck },
@@ -125,8 +133,12 @@ export function AttestApp() {
         <nav>
           {links.map((item, i) => (
             <div key={item.name}>
-              {i === 4 && <div className="sidebar-label">Intelligence</div>}
-              {i === 7 && <div className="sidebar-label">System</div>}
+              {item.name === "Policies" && (
+                <div className="sidebar-label">Intelligence</div>
+              )}
+              {item.name === "Integrations" && (
+                <div className="sidebar-label">System</div>
+              )}
               <Link
                 href={item.href}
                 className={cn("nav-item", current === item.name && "active")}
@@ -165,11 +177,7 @@ export function AttestApp() {
               />
             </div>
             <div>
-              <strong>
-                {snapshot.profile.role === "human_controller"
-                  ? "Finance Controller"
-                  : "AP Analyst"}
-              </strong>
+              <strong>{ROLE_TITLES[snapshot.profile.role]}</strong>
               <small>Finance Operations</small>
             </div>
             <ChevronDown size={13} />
@@ -235,15 +243,17 @@ export function AttestApp() {
               value={snapshot.profile.role}
               onChange={(e) =>
                 void setRole({
-                  role: e.target.value as
-                    "human_accountant" | "human_controller",
+                  role: e.target.value as HumanRole,
                 })
                   .then((r) => notify(r.message, r.ok))
                   .catch((e) => notify(e.message, false))
               }
             >
-              <option value="human_accountant">AP Analyst</option>
-              <option value="human_controller">Finance Controller</option>
+              {HUMAN_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {ROLE_TITLES[role]}
+                </option>
+              ))}
             </select>
           </span>
         </div>
@@ -273,6 +283,8 @@ export function AttestApp() {
             <Approvals snapshot={snapshot} />
           ) : current === "Audit trail" ? (
             <AuditPage snapshot={snapshot} />
+          ) : current === "Finance team" ? (
+            <FinanceTeam snapshot={snapshot} notify={notify} />
           ) : current === "Policies" ? (
             <Policies snapshot={snapshot} notify={notify} />
           ) : current === "Evaluation" ? (
@@ -1139,7 +1151,11 @@ function Policies({
                 input.sources[1].title =
                   "Block extension · signed room schedule";
                 void inject({ input })
-                  .then((id) => router.push(`/work/${id}`))
+                  .then((id) =>
+                    id
+                      ? router.push(`/work/${id}`)
+                      : notify("This role cannot create cases.", false),
+                  )
                   .catch((e) => notify(e.message, false));
               }}
             >

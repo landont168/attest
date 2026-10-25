@@ -33,6 +33,11 @@ import { Activity, Empty, Notice, Panel, Status } from "./primitives";
 import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
 import type { Notify } from "./attest-app";
+import { CaseTeamSummary, CaseTeamWork } from "./finance-team";
+import {
+  authorizeFinance,
+  DEFAULT_APPROVAL_LIMIT,
+} from "@/lib/finance/organization";
 import { VendorLogo } from "./vendor-logo";
 export function Investigation({
   id,
@@ -58,6 +63,8 @@ export function Investigation({
     "approve" | "reject" | "ask" | "resolve" | "answer" | "reverse" | null
   >(null);
   const [reason, setReason] = useState("");
+  const [deliveredQuantity, setDeliveredQuantity] = useState("");
+  const [responseText, setResponseText] = useState("");
   const [evidence, setEvidence] = useState<
     "note" | "signed_amendment" | "service_confirmation"
   >("note");
@@ -67,8 +74,9 @@ export function Investigation({
   useEffect(() => {
     if (new URLSearchParams(location.search).get("tab") === "calculation")
       setCalculationOpen(true);
-    if (new URLSearchParams(location.search).get("tab") === "audit")
-      setTab("audit");
+    const requested = new URLSearchParams(location.search).get("tab");
+    if (requested && ["audit", "team", "evidence"].includes(requested))
+      setTab(requested);
   }, []);
   if (!data)
     return (
@@ -114,6 +122,23 @@ export function Investigation({
       setBusy(false);
     }
   };
+  const canReview = authorizeFinance(
+    { id: snapshot.profile.identity, role: snapshot.profile.role },
+    "approve",
+    {
+      requiresController: !!c.resolution,
+      amountCents:
+        result?.disposition === "disputed" && !c.resolution
+          ? Math.abs(result.differenceCents ?? 0)
+          : (result?.expectedCents ?? 0),
+      limitCents:
+        snapshot.sandbox.routineApprovalLimitCents ?? DEFAULT_APPROVAL_LIMIT,
+    },
+  ).ok;
+  const canRespond = authorizeFinance(
+    { id: snapshot.profile.identity, role: snapshot.profile.role },
+    "respond",
+  ).ok;
   const submit = () => {
     if (dialog === "resolve")
       void run(() =>
@@ -121,6 +146,7 @@ export function Investigation({
           id,
           amountCents: result?.expectedCents ?? 0,
           reference: reason,
+          ...(responseText.trim() ? { responseText: responseText.trim() } : {}),
         }),
       );
     else if (dialog === "answer")
@@ -129,6 +155,13 @@ export function Investigation({
           id,
           answer: reason,
           evidence,
+          ...(evidence === "service_confirmation"
+            ? {
+                deliveredQuantity: Number(
+                  deliveredQuantity || input.service.quantity,
+                ),
+              }
+            : {}),
           ...(evidence === "note" && correctionSources.length
             ? {
                 correction: {
@@ -200,7 +233,7 @@ export function Investigation({
               </div>
               <Button
                 className="full-width"
-                disabled={busy}
+                disabled={busy || !canReview}
                 onClick={() => {
                   setReason("");
                   setDialog("approve");
@@ -216,7 +249,7 @@ export function Investigation({
               <div className="decision-buttons">
                 <Button
                   variant="outline"
-                  disabled={busy}
+                  disabled={busy || !canReview}
                   onClick={() => {
                     setReason("");
                     setDialog("reject");
@@ -226,7 +259,7 @@ export function Investigation({
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={busy}
+                  disabled={busy || !canReview}
                   onClick={() => {
                     setReason("");
                     setDialog("ask");
@@ -252,7 +285,12 @@ export function Investigation({
               <Button
                 variant="outline"
                 className="full-width"
-                disabled={busy}
+                disabled={
+                  busy ||
+                  !["human_controller", "vendor_manager"].includes(
+                    snapshot.profile.role,
+                  )
+                }
                 onClick={() => {
                   setReason("");
                   setDialog("resolve");
@@ -267,9 +305,13 @@ export function Investigation({
             <>
               <Button
                 className="full-width"
-                disabled={busy}
+                disabled={busy || !canRespond}
                 onClick={() => {
                   setReason("");
+                  if (snapshot.profile.role === "travel_coordinator") {
+                    setEvidence("service_confirmation");
+                    setDeliveredQuantity(String(input.service.quantity));
+                  }
                   setDialog("answer");
                 }}
               >
@@ -527,6 +569,41 @@ export function Investigation({
                 </button>
               </div>
             </div>
+            {(result.depositCents ?? 0) > 0 && (
+              <div className="settlement-summary">
+                <div>
+                  <span>Verified deposit credit</span>
+                  <button
+                    className="amount-link"
+                    onClick={() => openSource(input.deposit!.bankSourceId)}
+                  >
+                    {money(result.depositCents)}
+                  </button>
+                </div>
+                <div>
+                  <span>Invoice outstanding</span>
+                  <button
+                    className="amount-link"
+                    onClick={() => openSource(input.deposit!.creditSourceId)}
+                  >
+                    {money(result.invoiceOutstandingCents)}
+                  </button>
+                </div>
+                <div>
+                  <span>Supported remaining due</span>
+                  <button
+                    className="amount-link"
+                    onClick={() => setCalculationOpen(true)}
+                  >
+                    {money(result.remainingDueCents)}
+                  </button>
+                </div>
+                <small>
+                  Deposit verified against bank and AP records. Gross contract
+                  charges remain above.
+                </small>
+              </div>
+            )}
             <div className="calculation-note">
               <ShieldCheck size={13} />
               Calculated in integer cents · Validated against signed source
@@ -725,6 +802,7 @@ export function Investigation({
             : "Rules-based investigation"}
         </span>
       </div>
+      <CaseTeamSummary detail={data} />
       <div className="case-metrics">
         <div>
           <small>Invoiced</small>
@@ -780,6 +858,7 @@ export function Investigation({
       <div className="case-tabs">
         {[
           { id: "reconciliation", label: "Reconciliation", icon: LayersIcon },
+          { id: "team", label: "Team handoffs", icon: LayersIcon },
           { id: "evidence", label: "Evidence", icon: FileText },
           { id: "activity", label: "Agent activity", icon: Sparkles },
           { id: "decision", label: "Decision", icon: ShieldCheck },
@@ -796,7 +875,19 @@ export function Investigation({
           </button>
         ))}
       </div>
-      {tab === "reconciliation" ? (
+      {tab === "team" ? (
+        <CaseTeamWork
+          detail={data}
+          role={snapshot.profile.role}
+          onEvidence={openSource}
+          onAnswer={(kind) => {
+            setEvidence(kind);
+            setReason("");
+            setDeliveredQuantity(String(input.service.quantity));
+            setDialog("answer");
+          }}
+        />
+      ) : tab === "reconciliation" ? (
         <div className="investigation-grid">
           <div className="investigation-left">{evidencePanel}</div>
           <div className="investigation-center">{financial}</div>
@@ -1126,6 +1217,31 @@ export function Investigation({
               onChange={(e) => setReason(e.target.value)}
             />
           </label>
+          {dialog === "answer" && evidence === "service_confirmation" && (
+            <label className="form-label">
+              Delivered room-nights
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={deliveredQuantity || input.service.quantity}
+                onChange={(e) => setDeliveredQuantity(e.target.value)}
+                required
+              />
+            </label>
+          )}
+          {dialog === "resolve" && (
+            <label className="form-label">
+              Vendor-supplied response / corrected invoice text
+              <textarea
+                rows={4}
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                required={snapshot.profile.role === "vendor_manager"}
+                placeholder="Paste the synthetic vendor document. Nothing is sent externally."
+              />
+            </label>
+          )}
           {dialog === "answer" && (
             <label className="form-label">
               Supporting evidence

@@ -1,3 +1,7 @@
+import {
+  authorizeFinance,
+  type FinanceAction,
+} from "../src/lib/finance/organization";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { canTransition } from "../src/lib/finance/engine";
@@ -10,7 +14,12 @@ export async function profile(ctx: QueryCtx | MutationCtx) {
     .withIndex("by_identity", (q) => q.eq("identity", identity.tokenIdentifier))
     .unique();
   if (!p) throw new Error("Initialize your workspace.");
-  return p;
+  const employee = p.employeeId ? await ctx.db.get(p.employeeId) : null;
+  return {
+    ...p,
+    actorId:
+      employee?.sandboxId === p.sandboxId ? employee.actorId : p.identity,
+  };
 }
 export async function ownedCase(ctx: QueryCtx | MutationCtx, id: Id<"cases">) {
   const p = await profile(ctx);
@@ -63,4 +72,26 @@ export async function transition(
     throw new Error(`Invalid transition ${c.state} → ${to}.`);
   await audit(ctx, c, "state_changed", phase, actor, role, true, to);
   await ctx.db.patch(c._id, { state: to, phase, updatedAt: Date.now() });
+}
+
+export async function denyWorkspaceAction(
+  ctx: MutationCtx,
+  p: Awaited<ReturnType<typeof profile>>,
+  action: FinanceAction,
+) {
+  const decision = authorizeFinance({ id: p.actorId, role: p.role }, action);
+  if (decision.ok) return null;
+  await ctx.db.insert("audit", {
+    sandboxId: p.sandboxId,
+    timestamp: Date.now(),
+    actor: p.actorId,
+    role: p.role,
+    action: `${action}_denied`,
+    allowed: false,
+    before: "workspace",
+    after: "unchanged",
+    reason: decision.reason,
+    evidenceIds: [],
+  });
+  return { ok: false, message: decision.reason };
 }
