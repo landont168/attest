@@ -17,7 +17,7 @@ function runBody(task: string, context: unknown, idempotencyKey: string) {
     throw new Error("Investigation input is too large.");
   return { appId: env.CREAO_AGENT_ID, inputs: { prompt }, idempotencyKey };
 }
-function resultOutput(result: unknown): unknown {
+function resultOutput(result: unknown, strictEnvelope = false): unknown {
   if (!result || typeof result !== "object")
     throw new Error("CREAO completed without a result object.");
   const value = result as { text?: unknown; chatText?: unknown };
@@ -31,6 +31,8 @@ function resultOutput(result: unknown): unknown {
     );
   const parsed: unknown = JSON.parse(text);
   if (parsed && typeof parsed === "object" && "resultJson" in parsed) {
+    if (strictEnvelope && Object.keys(parsed).length !== 1)
+      throw new Error("Policy resultJson envelope has unexpected fields.");
     if (typeof parsed.resultJson !== "string" || !parsed.resultJson.trim())
       throw new Error("CREAO resultJson must contain a JSON object string.");
     const output: unknown = JSON.parse(parsed.resultJson);
@@ -40,12 +42,24 @@ function resultOutput(result: unknown): unknown {
   }
   return parsed;
 }
-async function request(path: string, body?: unknown) {
-  requireConfiguration();
+function policyConfiguration() {
+  const key = env.CREAO_POLICY_API_KEY || env.CREAO_API_KEY;
+  if (!env.CREAO_POLICY_AGENT_ID || !key)
+    throw new Error(
+      "Policy learner is not configured. Set CREAO_POLICY_AGENT_ID and an authorized CREAO_POLICY_API_KEY or CREAO_API_KEY.",
+    );
+  if (!key.startsWith("capi_"))
+    throw new Error("Policy learner requires a capi_ key.");
+  return { key, agentId: env.CREAO_POLICY_AGENT_ID };
+}
+async function request(path: string, body?: unknown, policy = false) {
+  const key = policy
+    ? policyConfiguration().key
+    : (requireConfiguration(), env.CREAO_API_KEY);
   const response = await fetch(`${base}${path}`, {
     method: body ? "POST" : "GET",
     headers: {
-      Authorization: `Bearer ${env.CREAO_API_KEY}`,
+      Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -123,27 +137,69 @@ export const poll = internalAction({
 export const submitPolicy = internalAction({
   args: { jobId: v.id("policyRuns"), context: v.any() },
   returns: v.string(),
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
+    const config = policyConfiguration();
+    const prompt = JSON.stringify({
+      task: "policy_learning",
+      context: args.context,
+    });
+    if (new TextEncoder().encode(prompt).length > 200000)
+      throw new Error("Learning input is too large.");
+    await ctx.runMutation(internal.policies.noteRun, {
+      jobId: args.jobId,
+      status: "submission_pending",
+    });
     const body = await request(
       "/runs",
-      runBody(
-        'Infer a narrowly scoped evidence procedure from the supplied historical decisions and corrections. Return JSON: vendor="Meridian Hospitality", procedure matching context.job.procedure, description, precedentIds. For precedentIds, copy at least two distinct exact code values from context.precedents (for example HIST-MER-101). These codes are the citation identifiers. Do not alter contractual amounts, approval authority, or signature requirements.',
-        args.context,
-        `attest-policy:${args.jobId}`,
-      ),
-    );
-    if (typeof body.id !== "string") throw new Error("Missing policy run ID.");
+      {
+        appId: config.agentId,
+        inputs: { prompt },
+        idempotencyKey: `attest-policy:${args.jobId}`,
+      },
+      true,
+    ).catch(async (error) => {
+      if (
+        error instanceof Error &&
+        /^CREAO returned HTTP 4[0-9]{2}/.test(error.message)
+      )
+        await ctx.runMutation(internal.policies.noteRun, {
+          jobId: args.jobId,
+          status: "submission_rejected",
+        });
+      throw error;
+    });
+    if (typeof body.id !== "string")
+      throw new Error(
+        "Policy submission outcome is unknown. Inspect CREAO history before retrying.",
+      );
+    await ctx.runMutation(internal.policies.noteRun, {
+      jobId: args.jobId,
+      status: String(body.status),
+      runId: body.id,
+    });
     return body.id;
   },
 });
 export const pollPolicy = internalAction({
-  args: { runId: v.string() },
+  args: { jobId: v.id("policyRuns"), runId: v.string() },
   returns: v.any(),
-  handler: async (_ctx, args) => {
-    const body = await request(`/runs/${encodeURIComponent(args.runId)}`);
+  handler: async (ctx, args) => {
+    const body = await request(
+      `/runs/${encodeURIComponent(args.runId)}`,
+      undefined,
+      true,
+    );
+    await ctx.runMutation(internal.policies.noteRun, {
+      jobId: args.jobId,
+      status: String(body.status),
+      runId: args.runId,
+      ...(["completed", "failed", "cancelled"].includes(String(body.status))
+        ? { raw: JSON.stringify(body.result ?? body) }
+        : {}),
+    });
     if (body.status === "failed" || body.status === "cancelled")
-      throw new Error("Policy investigation failed.");
+      throw new Error(`Policy investigation ${body.status}.`);
     if (body.status !== "completed") return { done: false, output: null };
-    return { done: true, output: resultOutput(body.result) };
+    return { done: true, output: resultOutput(body.result, true) };
   },
 });

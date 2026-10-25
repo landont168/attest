@@ -10,9 +10,11 @@
 
 import type * as auth from "../auth.js";
 import type * as cases from "../cases.js";
+import type * as corrections from "../corrections.js";
 import type * as creao from "../creao.js";
 import type * as http from "../http.js";
 import type * as investigations from "../investigations.js";
+import type * as learningRecords from "../learningRecords.js";
 import type * as lib from "../lib.js";
 import type * as policies from "../policies.js";
 import type * as validators from "../validators.js";
@@ -28,9 +30,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   cases: typeof cases;
+  corrections: typeof corrections;
   creao: typeof creao;
   http: typeof http;
   investigations: typeof investigations;
+  learningRecords: typeof learningRecords;
   lib: typeof lib;
   policies: typeof policies;
   validators: typeof validators;

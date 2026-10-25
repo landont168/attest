@@ -11,29 +11,33 @@ export const role = v.union(
   v.literal("sync_job"),
 );
 export const state = v.union(
-  ...[
-    "NEW",
-    "INVESTIGATING",
-    "NEEDS_INFO",
-    "PROPOSED",
-    "APPROVED",
-    "POSTED",
-    "REJECTED",
-    "REVISION_REQUIRED",
-    "FAILED_RETRYABLE",
-  ].map((s) => v.literal(s)),
+  ...(
+    [
+      "NEW",
+      "INVESTIGATING",
+      "NEEDS_INFO",
+      "PROPOSED",
+      "APPROVED",
+      "POSTED",
+      "REJECTED",
+      "REVISION_REQUIRED",
+      "FAILED_RETRYABLE",
+    ] as const
+  ).map((s) => v.literal(s)),
 );
 export const source = v.object({
   id: v.string(),
   kind: v.union(
-    ...[
-      "contract",
-      "amendment",
-      "service",
-      "invoice",
-      "communication",
-      "resolution",
-    ].map((s) => v.literal(s)),
+    ...(
+      [
+        "contract",
+        "amendment",
+        "service",
+        "invoice",
+        "communication",
+        "resolution",
+      ] as const
+    ).map((s) => v.literal(s)),
   ),
   title: v.string(),
   date: v.string(),

@@ -1,0 +1,3 @@
+{
+  "resultJson": "{\"schemaVersion\":1,\"outcome\":\"insufficient_evidence\",\"vendorId\":\"VEN-MERIDIAN\",\"procedure\":null,\"description\":\"No eligible precedents were supplied, so there is insufficient evidence to propose a procedure.\",\"precedentCodes\":[],\"correctionCodes\":[]}"
+}

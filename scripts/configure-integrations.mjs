@@ -14,8 +14,14 @@ if (process.env.CONVEX_DEPLOY_KEY || local.CONVEX_DEPLOY_KEY)
     "Remove the deploy-key override before using this development-only helper.",
   );
 const credentials = parseEnv(readFileSync(".env.integrations.local", "utf8"));
-const names = ["CREAO_API_KEY", "CREAO_AGENT_ID"];
-const missing = names.filter((name) => !credentials[name]?.trim());
+const requiredNames = ["CREAO_API_KEY", "CREAO_AGENT_ID"];
+const names = [
+  ...requiredNames,
+  ...["CREAO_POLICY_AGENT_ID", "CREAO_POLICY_API_KEY"].filter((name) =>
+    credentials[name]?.trim(),
+  ),
+];
+const missing = requiredNames.filter((name) => !credentials[name]?.trim());
 if (missing.length) {
   console.error(
     `Fill ${missing.join(" and ")} in .env.integrations.local, save the file, and rerun npm run configure:integrations.`,
@@ -26,6 +32,11 @@ if (!credentials.CREAO_API_KEY.trim().startsWith("capi_"))
   throw new Error(
     "Use a capi_ account or agent key from agent.creao.ai for the v1 API.",
   );
+if (
+  credentials.CREAO_POLICY_API_KEY?.trim() &&
+  !credentials.CREAO_POLICY_API_KEY.trim().startsWith("capi_")
+)
+  throw new Error("Policy learner key must use capi_ format.");
 console.log(`Configuring Convex development target: ${target}`);
 for (const name of names) {
   const result = spawnSync("npx", ["convex", "env", "set", name], {

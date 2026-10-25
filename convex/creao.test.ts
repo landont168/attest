@@ -13,6 +13,8 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubEnv("CREAO_API_KEY", "capi_test_only");
   vi.stubEnv("CREAO_AGENT_ID", "saved-agent-test");
+  vi.stubEnv("CREAO_POLICY_AGENT_ID", "policy-agent-test");
+  vi.stubEnv("CREAO_POLICY_API_KEY", "");
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -41,7 +43,15 @@ async function setup() {
     const jobId = await ctx.db.insert("policyRuns", {
       sandboxId,
       mode: "creao",
-      procedure: "controller_confirmation",
+      contextJson: JSON.stringify({
+        schemaVersion: 1,
+        vendorId: "VEN-MERIDIAN",
+        currentPolicy: null,
+        precedents: historicalPrecedents
+          .filter((p) => p.active)
+          .map((p) => ({ ...p, synthetic: true })),
+        corrections: [],
+      }),
       status: "running",
       createdAt: Date.now(),
     });
@@ -56,7 +66,7 @@ function reply(body: unknown, status = 200) {
   });
 }
 it("uses the v1 endpoint, capi authorization, appId and the saved prompt input", async () => {
-  const { t, caseId } = await setup();
+  const { t, caseId, jobId } = await setup();
   fetchMock.mockImplementation(async () =>
     reply({ id: "run-1", status: "pending" }, 202),
   );
@@ -83,7 +93,7 @@ it("uses the v1 endpoint, capi authorization, appId and the saved prompt input",
   expect(saved?.runId).toBe("run-1");
 });
 it("uses the same idempotency key for a repeated submission and a different key for a new attempt", async () => {
-  const { t, caseId } = await setup();
+  const { t, caseId, jobId } = await setup();
   fetchMock.mockImplementation(async () =>
     reply({ id: "run-1", status: "pending" }, 202),
   );
@@ -99,7 +109,7 @@ it("uses the same idempotency key for a repeated submission and a different key 
 it.each([false, true])(
   "reads result.text (resultJson wrapper: %s) and passes financial validation",
   async (wrapped) => {
-    const { t, caseId } = await setup();
+    const { t, caseId, jobId } = await setup();
     const input = hotelFixture(),
       r = reconcile(input);
     const output = {
@@ -146,7 +156,7 @@ it.each([false, true])(
 it.each(["not JSON", "[]", "null", "", null])(
   "rejects an invalid resultJson wrapper (%s) without chat fallback",
   async (resultJson) => {
-    const { t } = await setup();
+    const { t, jobId } = await setup();
     fetchMock.mockResolvedValue(
       reply({
         status: "completed",
@@ -157,14 +167,14 @@ it.each(["not JSON", "[]", "null", "", null])(
       }),
     );
     await expect(
-      t.action(internal.creao.pollPolicy, { runId: "policy-run" }),
+      t.action(internal.creao.pollPolicy, { jobId, runId: "policy-run" }),
     ).rejects.toThrow();
   },
 );
 it.each(["string arrays", "invented evidence"])(
   "still rejects wrapped interpretations with %s",
   async (invalid) => {
-    const { t, caseId } = await setup();
+    const { t, caseId, jobId } = await setup();
     const input = hotelFixture();
     const r = reconcile(input);
     const output = {
@@ -208,7 +218,7 @@ it.each(["string arrays", "invented evidence"])(
   },
 );
 it("accepts chatText when the completed result has no text", async () => {
-  const { t } = await setup();
+  const { t, jobId } = await setup();
   fetchMock.mockResolvedValue(
     reply({
       status: "completed",
@@ -216,11 +226,12 @@ it("accepts chatText when the completed result has no text", async () => {
     }),
   );
   expect(
-    (await t.action(internal.creao.pollPolicy, { runId: "policy-run" })).output,
+    (await t.action(internal.creao.pollPolicy, { jobId, runId: "policy-run" }))
+      .output,
   ).toEqual({ description: "policy" });
 });
 it("does not parse an incomplete result while polling", async () => {
-  const { t, caseId } = await setup();
+  const { t, caseId, jobId } = await setup();
   fetchMock.mockImplementation(async () =>
     reply({ status: "running", result: { text: "not finished" } }),
   );
@@ -234,13 +245,14 @@ it("does not parse an incomplete result while polling", async () => {
     ).done,
   ).toBe(false);
   expect(
-    (await t.action(internal.creao.pollPolicy, { runId: "policy-run" })).done,
+    (await t.action(internal.creao.pollPolicy, { jobId, runId: "policy-run" }))
+      .done,
   ).toBe(false);
 });
 it.each(["failed", "cancelled"])(
   "surfaces a %s provider run without a financial result",
   async (status) => {
-    const { t, caseId } = await setup();
+    const { t, caseId, jobId } = await setup();
     fetchMock.mockResolvedValue(reply({ status }));
     await expect(
       t.action(internal.creao.poll, { caseId, attempt: 1, runId: "run-1" }),
@@ -248,7 +260,7 @@ it.each(["failed", "cancelled"])(
   },
 );
 it("refuses malformed JSON and records the original response for diagnosis", async () => {
-  const { t, caseId } = await setup();
+  const { t, caseId, jobId } = await setup();
   fetchMock.mockResolvedValue(
     reply({ status: "completed", result: { text: "Here is your answer: {}" } }),
   );
@@ -270,13 +282,12 @@ it("submits policy requests with the same prompt contract and a stable job key",
   );
   await t.action(internal.creao.submitPolicy, {
     jobId,
-    context: { job: { procedure: "controller_confirmation" } },
+    context: { schemaVersion: 1, currentPolicy: null },
   });
   const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
-  expect(body.appId).toBe("saved-agent-test");
-  expect(JSON.parse(body.inputs.prompt).context.job.procedure).toBe(
-    "controller_confirmation",
-  );
+  expect(body.appId).toBe("policy-agent-test");
+  expect(JSON.parse(body.inputs.prompt).task).toBe("policy_learning");
+  expect(JSON.parse(body.inputs.prompt).context.currentPolicy).toBeNull();
   expect(body.idempotencyKey).toBe(`attest-policy:${jobId}`);
 });
 it("sends unambiguous precedent codes and validates live policy citations before creating a candidate", async () => {
@@ -290,27 +301,42 @@ it("sends unambiguous precedent codes and validates live policy citations before
     );
   });
   const context = await t.query(internal.policies.context, { jobId });
-  expect(context.precedents.map((p: { code: string }) => p.code)).toEqual([
-    "HIST-MER-101",
-    "HIST-MER-102",
-  ]);
+  expect(
+    context.context.precedents.map((p: { code: string }) => p.code),
+  ).toEqual(["HIST-MER-101", "HIST-MER-102"]);
   expect(JSON.stringify(context)).not.toMatch(/_id|sandboxId|_creationTime/);
   const output = {
-    vendor: "Meridian Hospitality",
+    schemaVersion: 1,
+    outcome: "candidate",
+    vendorId: "VEN-MERIDIAN",
+    correctionCodes: [],
     procedure: "controller_confirmation",
     description:
       "Require controller confirmation of signed original and added room groups.",
-    precedentIds: databaseIds.slice(0, 2).map(String),
+    precedentCodes: databaseIds.slice(0, 2).map(String),
   };
-  await expect(
-    t.mutation(internal.policies.finish, {
-      jobId,
-      raw: output,
-      runId: "policy-run",
-    }),
-  ).rejects.toThrow("Policy references or procedure are invalid");
+  await t.mutation(internal.policies.finish, {
+    jobId,
+    raw: output,
+    runId: "policy-run",
+  });
+  expect((await t.run((ctx) => ctx.db.get(jobId)))?.error).toContain(
+    "unavailable",
+  );
   expect((await t.run((ctx) => ctx.db.get(jobId)))?.policyId).toBeUndefined();
-  output.precedentIds = context.precedents.map((p: { code: string }) => p.code);
+  const validJobId = await t.run(async (ctx) => {
+    const old = (await ctx.db.get(jobId))!;
+    return ctx.db.insert("policyRuns", {
+      sandboxId: old.sandboxId,
+      mode: "creao",
+      status: "running",
+      contextJson: old.contextJson,
+      createdAt: Date.now(),
+    });
+  });
+  output.precedentCodes = context.context.precedents.map(
+    (p: { code: string }) => p.code,
+  );
   fetchMock.mockResolvedValue(
     reply({
       status: "completed",
@@ -318,15 +344,16 @@ it("sends unambiguous precedent codes and validates live policy citations before
     }),
   );
   const response = await t.action(internal.creao.pollPolicy, {
+    jobId: validJobId,
     runId: "policy-run",
   });
   await t.mutation(internal.policies.finish, {
-    jobId,
+    jobId: validJobId,
     raw: response.output,
     runId: "policy-run",
   });
   const candidate = await t.run(async (ctx) => {
-    const job = (await ctx.db.get(jobId))!;
+    const job = (await ctx.db.get(validJobId))!;
     return ctx.db.get(job.policyId!);
   });
   expect(candidate?.status).toBe("candidate");
@@ -335,7 +362,7 @@ it("sends unambiguous precedent codes and validates live policy citations before
   expect(candidate?.precedentIds).toEqual(["HIST-MER-101", "HIST-MER-102"]);
 });
 it("distinguishes HTTP rejection from an uncertain submission without exposing a response body", async () => {
-  const { t, caseId } = await setup();
+  const { t, caseId, jobId } = await setup();
   fetchMock.mockResolvedValue(reply({ error: "secret provider body" }, 401));
   await expect(
     t.action(internal.creao.submit, { caseId, attempt: 1, context: {} }),
@@ -349,7 +376,7 @@ it("distinguishes HTTP rejection from an uncertain submission without exposing a
   expect(runs[0].status).toBe("submission_rejected");
 });
 it("rejects a non-capi key before creating a submission record", async () => {
-  const { t, caseId } = await setup();
+  const { t, caseId, jobId } = await setup();
   vi.stubEnv("CREAO_API_KEY", "wrong-api-key");
   await expect(
     t.action(internal.creao.submit, { caseId, attempt: 1, context: {} }),
@@ -363,4 +390,65 @@ it("rejects a non-capi key before creating a submission record", async () => {
         .take(1),
     ),
   ).toHaveLength(0);
+});
+
+it("uses the separate policy key without changing invoice authorization", async () => {
+  const { t, jobId, caseId } = await setup();
+  vi.stubEnv("CREAO_POLICY_API_KEY", "capi_policy_only");
+  fetchMock.mockImplementation(async () =>
+    reply({ id: "run-key", status: "pending" }),
+  );
+  await t.action(internal.creao.submitPolicy, { jobId, context: {} });
+  await t.action(internal.creao.submit, { caseId, attempt: 1, context: {} });
+  expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({
+    Authorization: "Bearer capi_policy_only",
+  });
+  expect(fetchMock.mock.calls[1][1]?.headers).toMatchObject({
+    Authorization: "Bearer capi_test_only",
+  });
+});
+it("records ambiguous policy submission before a network failure", async () => {
+  const { t, jobId } = await setup();
+  fetchMock.mockRejectedValue(new Error("network timeout"));
+  await expect(
+    t.action(internal.creao.submitPolicy, { jobId, context: {} }),
+  ).rejects.toThrow("timeout");
+  const job = await t.run((ctx) => ctx.db.get(jobId));
+  expect(job?.submissionStatus).toBe("submission_pending");
+  expect(job?.runId).toBeUndefined();
+});
+it("retains malformed raw policy responses for diagnosis", async () => {
+  const { t, jobId } = await setup();
+  fetchMock.mockResolvedValue(
+    reply({ status: "completed", result: { text: "broken policy output" } }),
+  );
+  await expect(
+    t.action(internal.creao.pollPolicy, { jobId, runId: "raw-run" }),
+  ).rejects.toThrow();
+  const job = await t.run((ctx) => ctx.db.get(jobId));
+  expect(job?.raw).toContain("broken policy output");
+  expect(job?.runId).toBe("raw-run");
+});
+
+it("rejects extra fields in the policy scalar envelope while retaining the raw response", async () => {
+  const { t, jobId } = await setup();
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockImplementation(() =>
+        reply({
+          status: "completed",
+          result: {
+            text: JSON.stringify({ resultJson: "{}", unexpected: "ignored" }),
+          },
+        }),
+      ),
+  );
+  await expect(
+    t.action(internal.creao.pollPolicy, { jobId, runId: "strict-envelope" }),
+  ).rejects.toThrow("unexpected fields");
+  expect((await t.run((ctx) => ctx.db.get(jobId)))?.raw).toContain(
+    "unexpected",
+  );
 });

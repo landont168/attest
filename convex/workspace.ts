@@ -149,6 +149,7 @@ export const snapshot = query({
       })),
     );
     return {
+      learningCorrections: await ctx.db.query("corrections").withIndex("by_sandboxId", q=>q.eq("sandboxId",p.sandboxId)).order("desc").take(30),
       policyRuns: await ctx.db
         .query("policyRuns")
         .withIndex("by_sandboxId", (q) => q.eq("sandboxId", p.sandboxId))
